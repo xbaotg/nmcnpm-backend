@@ -1,0 +1,9 @@
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+fastapi
+pydantic
+uvicorn
+sqlalchemy
+psycopg2
+python-dotenv
