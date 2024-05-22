@@ -5,72 +5,28 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from starlette import status
 from database import SessionLocal
-from models import Users
 from passlib.context import CryptContext
+from sqlalchemy import func
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import jwt, JWTError
-from sqlalchemy import func
-import models
 
+from dependencies import models, db_dependency 
 
+SECRET_KEYS = "sldfkvhjlLKHJOHoi234908uKHJOI098UJLKnkljlkdsjfLKHO8908U324HJL1JL"
+ALGORITHM = "HS256"
 router = APIRouter(
     prefix = '/auth',
     tags = ['auth']
 )
 
-SECRET_KEYS = "sldfkvhjlLKHJOHoi234908uKHJOI098UJLKnkljlkdsjfLKHO8908U324HJL1JL"
-ALGORITHM = "HS256"
 
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl = 'auth/token')
-
-class CreateUserRequest(BaseModel):
-    user_name: str
-    password: str
-    fullname: str
-    user_nation: str
-    user_bday: date
-    user_mail: str
 
 
 class Token(BaseModel):
     access_token : str
     token_type : str
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-db_dependency = Annotated[Session, Depends(get_db)]
-
-# @router.post("/", status_code=status.HTTP_201_CREATED)  # create a new user-default role = manager
-# async def create_user(db: db_dependency, create_user_req: CreateUserRequest):
-#     maxID = db.query(func.max(models.Users.userid)).scalar()
-    
-#     invalid_username = db.query(models.Users).filter(models.Users.user_name == create_user_req.user_name).first()
-#     if invalid_username:
-#         return {"message": "This username has already been taken, please choose another one!"}
-
-#     create_user_model = Users(
-#         userid = maxID + 1,
-#         role = "manager",
-#         user_name = create_user_req.user_name,
-#         password = bcrypt_context.hash(create_user_req.password),
-#         fullname = create_user_req.fullname,
-#         user_nation = create_user_req.user_nation,
-#         user_bday = create_user_req.user_bday,
-#         user_mail = create_user_req.user_mail
-#     )
-
-#     db.add(create_user_model)
-#     db.commit()
-#     return create_user_req
-
-
-
 
 
 @router.post("/token", response_model = Token)
@@ -108,6 +64,8 @@ def create_access_token(username: str, userid: int, expired_delta: timedelta):
     except Exception as e:
         raise HTTPException(status_code=501, detail=f"The error is in encoding jwt : {str(e)}")
 
+
+
 def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
     try:
         payload = jwt.decode(token, SECRET_KEYS, algorithms=[ALGORITHM])
@@ -115,6 +73,28 @@ def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
         userid: int = payload.get('id')
         if user_name is None or userid is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate user')
+
         return {'user_name': user_name, 'userid':userid}
+
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate user')
+
+user_dependency = Annotated[dict, Depends(get_current_user)]
+
+
+def get_user_permission(current_user: user_dependency, db: db_dependency, role:str):
+    if current_user is None:
+        raise HTTPException(status_code=401, detail = 'Authentication Failed')
+        return None
+    user_role = db.query(models.Users).filter(models.Users.userid == current_user['userid']).first().role
+
+    #check permission of user_role
+    if (role == "manager"):
+        # check if user is deleted or not
+        if (not db.query(models.Users).filter(models.Users.userid == current_user['userid']).first().show):
+            raise HTTPException(status_code=401, detail="Your account is no longer active!")
+        return True
+    elif (role == "admin" and user_role != role):
+        raise HTTPException(status_code=401, detail="You don't have permission to do this action!")
+
+    return True

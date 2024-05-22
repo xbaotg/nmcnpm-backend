@@ -3,9 +3,9 @@ from fastapi import FastAPI, HTTPException, Depends, APIRouter
 from sqlalchemy import func
 
 from routes.users.pydantics import *
-import models
-from auth import get_current_user, bcrypt_context
-from main import db_dependency, user_dependency
+
+from auth import bcrypt_context, user_dependency, get_user_permission
+from dependencies import db_dependency, models
 
 
 route = APIRouter(
@@ -13,25 +13,6 @@ route = APIRouter(
     tags = ['users']
 )
 
-
-def get_user_permission(current_user: user_dependency, db: db_dependency, role:str):
-    if current_user is None:
-        raise HTTPException(status_code=401, detail = 'Authentication Failed')
-        return None
-    user_role = db.query(models.Users).filter(models.Users.userid == current_user['userid']).first().role
-
-
-    #check permission of user_role
-    if (role == "manager"):
-        # check if user is deleted or not
-        if (not db.query(models.Users).filter(models.Users.userid == current_user['userid']).first().show):
-            raise HTTPException(status_code=401, detail="Your account is no longer active!")
-        return True
-    elif (role == "admin" and user_role != role):
-        raise HTTPException(status_code=401, detail="You don't have permission to do this action!")
-
-    return True
-    
 
 # CREATE new user  **admin only
 
