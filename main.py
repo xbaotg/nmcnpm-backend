@@ -7,27 +7,31 @@ import models
 from database import engine, SessionLocal
 from sqlalchemy.orm import Session, load_only
 from sqlalchemy import func
-# from auth import get_current_user, bcrypt_context
+
+from auth import get_current_user, bcrypt_context
 import auth
-import routes
+from dependencies import db_dependency, user_dependency
+from routes.users.users import route as user_route
+# import users
+
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 app.include_router(auth.router)
-app.include_router(routes.users.users.router)
+app.include_router(user_route)
 
 
-def get_db():
-    db = SessionLocal()
-    try: 
-        yield db
-    finally: 
-        db.close()
+# def get_db():
+#     db = SessionLocal()
+#     try: 
+#         yield db
+#     finally: 
+#         db.close()
 
 
-db_dependency = Annotated[Session, Depends(get_db)]
-user_dependency = Annotated[dict, Depends(get_current_user)]
+# db_dependency = Annotated[Session, Depends(get_db)]
+# user_dependency = Annotated[dict, Depends(get_current_user)]
 
 
 # def get_user_permission(current_user: user_dependency, db: db_dependency, role:str):

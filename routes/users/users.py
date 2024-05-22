@@ -1,10 +1,8 @@
 from datetime import date
 from fastapi import FastAPI, HTTPException, Depends, APIRouter
 from sqlalchemy import func
-import sys 
-sys.path.append('../backend')
 
-import routes.users.pydantics
+from routes.users.pydantics import *
 import models
 from auth import get_current_user, bcrypt_context
 from main import db_dependency, user_dependency
@@ -12,7 +10,7 @@ from main import db_dependency, user_dependency
 
 route = APIRouter(
     prefix = '/users', 
-    tag = ['users']
+    tags = ['users']
 )
 
 
