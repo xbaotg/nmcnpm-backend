@@ -43,7 +43,6 @@ print("Connecting to database...")
 print(f"POSTGRES_SERVER: {config.POSTGRES_SERVER}")
 print(f"POSTGRES_PORT: {config.POSTGRES_PORT}")
 print(f"POSTGRES_DB: {config.POSTGRES_DB}")
-print()
 
 db_url = f"postgresql://{config.POSTGRES_USER}:{config.POSTGRES_PASSWORD}@{config.POSTGRES_SERVER}:{config.POSTGRES_PORT}/{config.POSTGRES_DB}"
 db = Database(db_url)

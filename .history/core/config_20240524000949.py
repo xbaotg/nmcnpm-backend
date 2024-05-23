@@ -1,10 +1,9 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from dotenv import find_dotenv
+from pydantic_settings import BaseSettings
+from dotenv import load_dotenv, find_dotenv
+import os
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=find_dotenv())
-
     SQL_INIT_PATH: str
 
     POSTGRES_USER: str
@@ -18,6 +17,8 @@ class Settings(BaseSettings):
 
     API_PREFIX_USERS: str
     API_PREFIX_AUTH: str
+
+    # model_config = SettingsConfigDict(env_file=env_file, env_file_encoding="utf-8")
 
 
 config = Settings()  # type: ignore

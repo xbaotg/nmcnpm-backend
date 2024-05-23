@@ -1,9 +1,15 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from dotenv import find_dotenv
+from pathlib import Path
+
+
+env_file = Path(__file__).parent.parent / ".env"
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=find_dotenv())
+    model_config: SettingsConfigDict = {
+        "env_file": env_file,
+        "env_file_encoding": "utf-8",
+    }
 
     SQL_INIT_PATH: str
 

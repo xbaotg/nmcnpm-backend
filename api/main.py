@@ -1,7 +1,7 @@
 from core.config import config
 from fastapi import APIRouter
 
-from . import auth, users
+from .routes import auth, users
 
 router = APIRouter()
 

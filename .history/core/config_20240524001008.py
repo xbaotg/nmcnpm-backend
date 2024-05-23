@@ -1,10 +1,10 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from dotenv import find_dotenv
+from dotenv import load_dotenv, find_dotenv
+import os
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=find_dotenv())
-
+    model_config
     SQL_INIT_PATH: str
 
     POSTGRES_USER: str

@@ -6,7 +6,7 @@ from schemas.users import UserCreateBase
 from utils import is_valid_age
 
 
-def authenticate_user(username: str, password: str) -> Users | bool:
+def authenticate_user(username: str, password: str):
     try:
         user = db.query(Users).filter(Users.user_name == username).first()
     except Exception as e:

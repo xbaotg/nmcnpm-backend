@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from dotenv import find_dotenv
+from dotenv import load_dotenv, find_dotenv
+import os
 
 
 class Settings(BaseSettings):

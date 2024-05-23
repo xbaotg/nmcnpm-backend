@@ -1,9 +1,10 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from dotenv import find_dotenv
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=find_dotenv())
+    model_config = SettingsConfigDict(
+        env_file=".env", env_ignore_empty=True, extra="ignore"
+    )
 
     SQL_INIT_PATH: str
 
