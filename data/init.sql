@@ -1,6 +1,6 @@
-CREATE TABLE Users (
-    userID INTEGER PRIMARY KEY not NULL,
-    fullname VARCHAR(255),
+CREATE TABLE IF NOT EXISTS Users (
+    user_id SERIAL PRIMARY KEY,
+    full_name VARCHAR(255),
     role VARCHAR(50), -- host - manager
     user_name VARCHAR(255),
     password VARCHAR(255),
@@ -10,18 +10,18 @@ CREATE TABLE Users (
     show BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE Clubs (
-    clubID INTEGER PRIMARY KEY not NULL, 
+CREATE TABLE IF NOT EXISTS Clubs (
+    club_id INTEGER PRIMARY KEY not NULL, 
     club_name VARCHAR(255),
 	club_shortname VARCHAR(255), 
     total_player INTEGER,
     nation VARCHAR(255),
     manager INTEGER, -- Foreign key reference to Users
     show BOOLEAN DEFAULT TRUE,
-    FOREIGN KEY (manager) REFERENCES Users(userID)
+    FOREIGN KEY (manager) REFERENCES Users(user_id)
 );
 
-CREATE TABLE Players (
+CREATE TABLE IF NOT EXISTS Players (
     player_id INTEGER PRIMARY KEY not NULL,
     player_name VARCHAR(255),
     player_bday DATE,
@@ -30,11 +30,11 @@ CREATE TABLE Players (
     player_nation VARCHAR(255),
     js_number INTEGER,
     show BOOLEAN DEFAULT TRUE,
-    FOREIGN KEY (player_club) REFERENCES Clubs(clubID)
+    FOREIGN KEY (player_club) REFERENCES Clubs(club_id)
 );
 
-CREATE TABLE Ranking (
-    clubID INTEGER PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS Ranking (
+    club_id INTEGER PRIMARY KEY,
     club_ranking INTEGER,
     club_points INTEGER,
     club_win INTEGER,
@@ -43,10 +43,10 @@ CREATE TABLE Ranking (
     club_goals INTEGER,
     club_gconcede INTEGER,
     club_gdif INTEGER,
-    FOREIGN KEY (clubID) REFERENCES Clubs(clubID)
+    FOREIGN KEY (club_id) REFERENCES Clubs(club_id)
 );
 
-CREATE TABLE Referees (
+CREATE TABLE IF NOT EXISTS Referees (
     ref_id INTEGER PRIMARY KEY,
     ref_name VARCHAR(255),
     ref_birthd TIMESTAMP,
@@ -55,7 +55,7 @@ CREATE TABLE Referees (
     show BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE Matches (
+CREATE TABLE IF NOT EXISTS Matches (
     match_id INTEGER PRIMARY KEY,
     team1 INTEGER, -- Foreign key reference to Club
     team2 INTEGER, -- Foreign key reference to Club
@@ -65,14 +65,15 @@ CREATE TABLE Matches (
     var_id INTEGER, -- Foreign key reference to Referee
     lineman_id INTEGER, -- Foreign key reference to Referee
     show BOOLEAN DEFAULT TRUE,
-    FOREIGN KEY (team1) REFERENCES Clubs(clubID),
-    FOREIGN KEY (team2) REFERENCES Clubs(clubID),
+
+    FOREIGN KEY (team1) REFERENCES Clubs(club_id),
+    FOREIGN KEY (team2) REFERENCES Clubs(club_id),
     FOREIGN KEY (ref_id) REFERENCES Referees(ref_id),
     FOREIGN KEY (var_id) REFERENCES Referees(ref_id),
     FOREIGN KEY (lineman_id) REFERENCES Referees(ref_id)
 );
 
-CREATE TABLE Events (
+CREATE TABLE IF NOT EXISTS Events (
     match_id INTEGER, -- Foreign key reference to Matches
     events VARCHAR(255),
     minute_event TIME,
@@ -83,9 +84,7 @@ CREATE TABLE Events (
     show BOOLEAN DEFAULT TRUE
 );
 
-
-
-CREATE TABLE Thamso (
+CREATE TABLE IF NOT EXISTS Params (
     club_max_foreign_young_player INTEGER,
     match_between_two_teams INTEGER,
     event_type VARCHAR(255),

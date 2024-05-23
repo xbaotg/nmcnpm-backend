@@ -1,2 +1,7 @@
 myEnv
 nmcnpm-backend
+**/.venv/
+
+**/__pycache__/
+*.py[cod]
+**/pgdata
