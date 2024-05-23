@@ -5,3 +5,4 @@ nmcnpm-backend
 **/__pycache__/
 *.py[cod]
 **/pgdata
+**/.history
