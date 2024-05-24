@@ -1,16 +1,27 @@
 from datetime import date
 
-from core.db import db
-from crud import create_user
-from fastapi import APIRouter, HTTPException
+from core.db import db, db_deps
+from crud import create_user as crud_create_user
+from fastapi import APIRouter, HTTPException, Depends
 from schemas.db import Users
 from schemas.users import UserCreateBase, UserReg
 from sqlalchemy import func
 
+from api.deps import List, CurrentUser
+
+
+
+
 route = APIRouter()
 
+def isValidAge(bday:date):
+    now = date.today()
+    age = now.year - bday.year - ((now.month, now.day) < (bday.month, bday.day))
+    if (age < 16 or age > 40):
+        return False
+    return True
 
-def get_user_permission(current_user, role):
+def get_user_permission(db: db_deps, current_user:CurrentUser, role):
     if current_user is None:
         raise HTTPException(status_code=401, detail="Authentication Failed")
 
@@ -39,35 +50,41 @@ def get_user_permission(current_user, role):
 
     return True
 
+@route.get("/get-message")
+async def get_message():
+    return {
+        "message": "Hello my friends."
+    }
 
 @route.post("/create-user")
-async def create_user(new_user: UserCreateBase):
+async def create_user(db: db_deps, new_user: UserCreateBase):
+    #check valid username
     invalid_username = (
         db.query(Users).filter(Users.user_name == new_user.user_name).first()
     )
-
-    if invalid_username:
-        return {
-            "message": "This username has already been taken, please choose another one!"
-        }
-
-    await create_user(new_user)
+    crud_create_user(db, new_user)
 
 
-# GET ALL USERS
 
 
-@route.get("/", response_model=list[UserReg])
-async def get_all_users(current_user):
-    db_user = db.query(Users).all()
-
-    if db_user == 0:
-        raise HTTPException(status_code=404, detail="Cant find users")
-
-    return db_user
 
 
-# GET existing users (not deleted)  **admin only
+# # GET ALL USERS
+
+
+# @route.get("/", response_model=List[UserReg])
+# async def get_all_users(current_user: CurrentUser, db: db):
+#     db_user = db.query(Users).all()
+
+#     if db_user == 0:
+#         raise HTTPException(status_code=404, detail="Cant find users")
+
+#     return db_user
+
+
+
+
+# # GET existing users (not deleted)  **admin only
 # @route.get("/get-activated-users", response_model=List[UserReg])
 # async def get_all_users(current_user: user_dependency):
 #     hasPermission = get_user_permission(current_user, db, "admin")

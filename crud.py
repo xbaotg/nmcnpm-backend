@@ -1,9 +1,11 @@
 from fastapi import HTTPException
-from core.db import db
+from sqlalchemy import func
+from core.db import db, db_deps
 from schemas.db import Users
 from core.security import verify_password, get_password_hash
 from schemas.users import UserCreateBase
 from utils import is_valid_age
+
 
 
 def authenticate_user(username: str, password: str):
@@ -26,7 +28,7 @@ def authenticate_user(username: str, password: str):
     return user
 
 
-def create_user(new_user: UserCreateBase) -> Users | dict:
+def create_user(db: db_deps, new_user: UserCreateBase) -> Users | dict:
     try:
         newUserdict = new_user.dict()
 
@@ -44,9 +46,11 @@ def create_user(new_user: UserCreateBase) -> Users | dict:
 
         newUserdict["password"] = get_password_hash(newUserdict["password"])
         newUserdict["show"] = True
+        newUserdict["user_id"] = 1 + (db.query(func.max(Users.user_id)).scalar() or 0)
 
         new_db_user = Users(**newUserdict)
         db.add(new_db_user)
+        db.commit()
 
         return new_db_user
 

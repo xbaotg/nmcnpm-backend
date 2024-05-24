@@ -2,7 +2,7 @@ from fastapi import Depends, HTTPException, status
 from jose import JWTError, jwt
 from core.config import config
 from fastapi.security import OAuth2PasswordBearer
-from typing import Annotated
+from typing import Annotated, List
 from passlib.context import CryptContext
 
 
