@@ -14,13 +14,6 @@ from api.deps import List, CurrentUser
 
 route = APIRouter()
 
-def isValidAge(bday:date):
-    now = date.today()
-    age = now.year - bday.year - ((now.month, now.day) < (bday.month, bday.day))
-    if (age < 16 or age > 40):
-        return False
-    return True
-
 def get_user_permission(db: db_deps, current_user:CurrentUser, role):
     if current_user is None:
         raise HTTPException(status_code=401, detail="Authentication Failed")
