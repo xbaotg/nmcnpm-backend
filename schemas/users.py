@@ -14,11 +14,12 @@ class UserCreateBase(BaseModel):
 
 
 class UserReg(BaseModel):
-    userid: int
+    user_id: int
     full_name: str
     role: str
     user_name: str
     user_mail: str
+    user_nation: str
     user_bday: date
     show: bool
 
