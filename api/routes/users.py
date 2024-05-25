@@ -7,8 +7,7 @@ from schemas.db import Users
 from schemas.users import UserCreateBase, UserReg, UserUpdate
 from sqlalchemy import func
 
-from api.deps import List, CurrentUser, get_password_hash
-
+from api.deps import List, CurrentUser, get_password_hash, fuzz
 
 
 
@@ -169,7 +168,6 @@ async def permanently_delete_user(user_id:int, db: db_deps, current_user: Curren
 
 
 
-
 # Update users
 @route.put("/update-user-info/{user_id}", response_model=UserUpdate)
 async def update_user_info(
@@ -196,3 +194,38 @@ async def update_user_info(
         return target
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}!")
+
+
+# SEARCH
+
+# search by name
+@route.get("/search-by-name")
+async def search_user_by_name(full_name: str, db: db_deps, current_user: CurrentUser, threshold: int = 80):
+    try:
+        activated_users = db.query(Users).filter(Users.show == True).all()
+        matched_users = (user for user in activated_users if fuzz.partial_ratio(user.full_name.lower(), full_name.lower()) >= threshold)
+        if not matched_users:
+            return {
+                "message" : f"Can't find any users match the name: {full_name}"
+            }
+        return matched_users
+    except Exception as e:
+        raise HTTPException(status_code=500, detail = f"Internal Server Error: {str(e)}")
+
+
+# search by natio
+@route.get("/search-by-nation")
+async def search_user_by_name(nation: str, db: db_deps, current_user: CurrentUser, threshold: int = 80):
+    try:
+        activated_users = db.query(Users).filter(Users.show == True).all()
+        matched_users = (user for user in activated_users if fuzz.partial_ratio(user.user_nation.lower(), nation.lower()) >= threshold)
+        if not matched_users:
+            return {
+                "message" : f"Can't find any users match the nation: {nation}"
+            }
+        return matched_users
+    except Exception as e:
+        raise HTTPException(status_code=500, detail = f"Internal Server Error: {str(e)}")
+
+
+
