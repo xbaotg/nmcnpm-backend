@@ -1,8 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 from core.config import config
 from sqlalchemy import text
+from typing import Annotated
+from fastapi import Depends
 
 
 class Database:
@@ -48,3 +50,4 @@ print()
 db_url = f"postgresql://{config.POSTGRES_USER}:{config.POSTGRES_PASSWORD}@{config.POSTGRES_SERVER}:{config.POSTGRES_PORT}/{config.POSTGRES_DB}"
 db = Database(db_url)
 Base = db.get_base()
+db_deps = Annotated[Session, Depends(db.get_db)]
