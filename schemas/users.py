@@ -14,14 +14,14 @@ class UserCreateBase(BaseModel):
 
 
 class UserReg(BaseModel):
-    user_id: int
-    full_name: str
-    role: str
-    user_name: str
-    user_mail: str
-    user_nation: str
-    user_bday: date
-    show: bool
+    user_id: int | None
+    full_name: str | None
+    role: str | None
+    user_name: str | None
+    user_mail: str | None
+    user_nation: str | None
+    user_bday: date | None
+    show: bool | None
 
     class Config:
         orm_mode = True

@@ -5,6 +5,7 @@ from schemas.db import Users
 from core.security import verify_password, get_password_hash
 from schemas.users import UserCreateBase
 from utils import is_valid_age
+from api.deps import CurrentUser
 
 
 def authenticate_user(username: str, password: str, db: db_deps):
@@ -65,3 +66,23 @@ def create_user(db: db_deps, new_user: UserCreateBase) -> Users | dict:
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Can't add new user: {str(e)}")
+
+
+def get_info_user(db: db_deps, current_user: CurrentUser):
+    try:
+        user = db.query(Users).filter(Users.user_name == current_user["user_name"])
+
+        if user is None:
+            raise HTTPException(status_code=204, detail="Can't find user !")
+
+        return user.first()
+
+    except HTTPException as e:
+        raise
+
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc()
+
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
