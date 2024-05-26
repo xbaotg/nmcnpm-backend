@@ -3,7 +3,7 @@ from datetime import date
 from core.db import db_deps, db as code_db
 from crud import create_user as crud_create_user
 from fastapi import APIRouter, HTTPException, Depends
-from schemas.db import Users
+from schemas.db import Users, Params
 from schemas.users import UserCreateBase, UserReg, UserUpdate
 from sqlalchemy import func
 
@@ -42,11 +42,14 @@ def get_user_permission(db: db_deps, current_user : CurrentUser, role: str):
 
     return True
 
+def get_rule(db: db_deps):
+    return db.query(Params).first()
         
 @route.get("/get-message")
 async def get_message(db: db_deps, current_user : CurrentUser):
 
-    hasPermission = get_user_permission(db, current_user, "admin")
+    rule = get_rule(db)
+    return rule
 
     return {
         "message": "Hello my friends."
