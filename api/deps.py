@@ -1,5 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from jose import JWTError, jwt
+from fuzzywuzzy import fuzz
 from core.config import config
 from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated, List
