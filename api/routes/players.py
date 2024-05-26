@@ -92,7 +92,7 @@ async def get_players_by_name(full_name: str, db: db_deps, threshold: int = 80):
         ]
 
         if not matched_players:
-            raise HTTPException(status_code=404, detail="Cannot find players")
+            raise HTTPException(status_code=204, detail="Cannot find players")
 
         return matched_players
     except Exception as e:
@@ -113,14 +113,14 @@ async def get_players_by_club(club_name: str, db: db_deps, threshold: int = 80):
                 break
 
         if club_id is None:
-            raise HTTPException(status_code=404, detail="Cannot find club")
+            raise HTTPException(status_code=204, detail="Cannot find club")
 
         players = db.query(Players).filter(Players.show == True).all()
         matched_players = [
             player for player in players if player.player_club == club_id
         ]
         if not matched_players:
-            raise HTTPException(status_code=404, detail="Cannot find players")
+            raise HTTPException(status_code=204, detail="Cannot find players")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
     return matched_players
@@ -137,7 +137,7 @@ async def get_players_by_pos(position: str, db: db_deps, threshold: int = 80):
             >= threshold
         ]
         if not matched_players:
-            raise HTTPException(status_code=404, detail="Cannot find players")
+            raise HTTPException(status_code=204, detail="Cannot find players")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
     return matched_players
@@ -154,7 +154,7 @@ async def get_players_by_nation(nation: str, db: db_deps, threshold: int = 80):
             >= threshold
         ]
         if not matched_players:
-            raise HTTPException(status_code=404, detail="Cannot find players")
+            raise HTTPException(status_code=204, detail="Cannot find players")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
     return matched_players
@@ -180,3 +180,54 @@ async def update_player(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}!")
     return target
+
+@route.put("/delete_player")
+async def delete_player(playerID: int, current_user: CurrentUser, db: db_deps):
+    hasPermission = get_user_permission(db, current_user, "manager")
+    try:
+        target = db.query(Players).filter(Players.player_id == playerID).first()
+
+        if target is None:
+            raise HTTPException(
+                status_code=204, detail="Can't find player with id:{playerID}"
+            )
+
+        if target.show == True:
+            target.show = False
+            db.commit()
+            return {"message": f"Deleted player with id:{playerID}"}
+        else:
+            return {
+                "message": f"Can't find player with id:{playerID}. Maybe deleted."
+            }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Internal Server Error: {str(e)} !"
+        )
+    
+route.put("/restore_deleted_player")
+async def restore_deleted_player(player_id: int, current_user: CurrentUser, db: db_deps):
+    hasPermission = get_user_permission(db, current_user, "manager")
+    try:
+        target = db.query(Players).filter(Players.player_id == player_id).first()
+        if target.show != True:
+            target.show = True
+            db.commit()
+            return {"message": f"Restored players with id:{player_id}"}
+        else:
+            return {"message": f"Can't find players with id:{player_id}."}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Internal Server Error: {str(e)} !"
+        )
+    
+@route.delete("/permanently_delete_player")
+async def permanently_delete_player(player_id: int, db: db_deps, current_user: CurrentUser):
+    hasPermission = get_user_permission(db, current_user, "admin")
+
+    target = db.query(Players).filter(Players.player_id == player_id).first()
+
+    db.delete(target)
+    db.commit()
+    return {"message": f"Delete player with id {player_id} successfully !"}
