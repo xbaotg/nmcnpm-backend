@@ -205,7 +205,7 @@ async def delete_player(playerID: int, current_user: CurrentUser, db: db_deps):
             status_code=500, detail=f"Internal Server Error: {str(e)} !"
         )
     
-route.put("/restore_deleted_player")
+@route.put("/restore_deleted_player")
 async def restore_deleted_player(player_id: int, current_user: CurrentUser, db: db_deps):
     hasPermission = get_user_permission(db, current_user, "manager")
     try:
@@ -213,9 +213,9 @@ async def restore_deleted_player(player_id: int, current_user: CurrentUser, db: 
         if target.show != True:
             target.show = True
             db.commit()
-            return {"message": f"Restored players with id:{player_id}"}
+            return {"message": f"Restored player with id:{player_id}"}
         else:
-            return {"message": f"Can't find players with id:{player_id}."}
+            return {"message": f"Can't find player with id:{player_id}."}
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Internal Server Error: {str(e)} !"
@@ -223,7 +223,7 @@ async def restore_deleted_player(player_id: int, current_user: CurrentUser, db: 
     
 @route.delete("/permanently_delete_player")
 async def permanently_delete_player(player_id: int, db: db_deps, current_user: CurrentUser):
-    hasPermission = get_user_permission(db, current_user, "admin")
+    hasPermission = get_user_permission(db, current_user, "manager")
 
     target = db.query(Players).filter(Players.player_id == player_id).first()
 

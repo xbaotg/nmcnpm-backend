@@ -7,8 +7,8 @@ from sqlalchemy import func
 from api.deps import CurrentUser, List
 from core.db import db as code_db
 from core.db import db_deps
-from schemas.db import Clubs, Players, Users
-from schemas.players import ClubCreate, ClubShow, ClubUpdate
+from schemas.db import Clubs, Users
+from schemas.clubs import ClubCreate, ClubShow, ClubUpdate
 
 route = APIRouter()
 
@@ -45,7 +45,7 @@ def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
 @route.post("/add_clubs")
 async def add_clubs(club: ClubCreate, db: db_deps):  # current_user: CurrentUser):
     try:
-        # hasPermission = get_user_permission(current_user, db, "manager")
+        # hasPermission = get_user_permission(current_user, db, "admin")
         newDict = club.dict()
         for key, value in newDict.items():
             if value == "string":
@@ -91,7 +91,7 @@ async def get_clubs_by_name(club_name: str, db: db_deps, threshold: int = 80):
 async def update_club(
     club_id: int, club_update: ClubUpdate, db: db_deps):  # current_user: CurrentUser):
     try:
-        # hasPermission = get_user_permission(current_user, db, "manager")
+        # hasPermission = get_user_permission(current_user, db, "admin")
         target = db.query(Clubs).filter(Clubs.club_id == club_id).first()
         update_info = club_update.dict(exclude_unset=True)
         for key, value in update_info.items():
@@ -105,3 +105,54 @@ async def update_club(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}!")
     return target
+
+@route.put("/delete_club")
+async def delete_club(club_id: int, current_user: CurrentUser, db: db_deps):
+    hasPermission = get_user_permission(db, current_user, "admin")
+    try:
+        target = db.query(Clubs).filter(Clubs.club_id == club_id).first()
+
+        if target is None:
+            raise HTTPException(
+                status_code=204, detail="Can't find club with id:{club_id}"
+            )
+
+        if target.show == True:
+            target.show = False
+            db.commit()
+            return {"message": f"Deleted club with id:{club_id}"}
+        else:
+            return {
+                "message": f"Can't find club with id:{club_id}. Maybe deleted."
+            }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Internal Server Error: {str(e)} !"
+        )
+    
+@route.put("/restore_deleted_club")
+async def restore_deleted_club(club_id: int, current_user: CurrentUser, db: db_deps):
+    hasPermission = get_user_permission(db, current_user, "admin")
+    try:
+        target = db.query(Clubs).filter(Clubs.club_id == club_id).first()
+        if target.show != True:
+            target.show = True
+            db.commit()
+            return {"message": f"Restored club with id:{club_id}"}
+        else:
+            return {"message": f"Can't find club with id:{club_id}."}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Internal Server Error: {str(e)} !"
+        )
+    
+@route.delete("/permanently_delete_club")
+async def permanently_delete_club(club_id: int, db: db_deps, current_user: CurrentUser):
+    hasPermission = get_user_permission(db, current_user, "admin")
+
+    target = db.query(Clubs).filter(Clubs.club_id == club_id).first()
+
+    db.delete(target)
+    db.commit()
+    return {"message": f"Delete clubs with id {club_id} successfully !"}
