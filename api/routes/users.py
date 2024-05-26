@@ -10,8 +10,6 @@ from sqlalchemy import func
 from api.deps import List, CurrentUser
 
 
-
-
 route = APIRouter()
 
 def get_user_permission(db: db_deps, current_user:CurrentUser, role):
