@@ -162,8 +162,7 @@ async def get_players_by_nation(nation: str, db: db_deps, threshold: int = 80):
 
 @route.put("/update_player")
 async def update_player(
-    playerID: int, player_update: PlayerUpdate, db: db_deps
-):  # current_user: CurrentUser):
+    playerID: int, player_update: PlayerUpdate, db: db_deps):  # current_user: CurrentUser):
     try:
         # hasPermission = get_user_permission(current_user, db, "manager")
         target = db.query(Players).filter(Players.player_id == playerID).first()
@@ -230,4 +229,4 @@ async def permanently_delete_player(player_id: int, db: db_deps, current_user: C
 
     db.delete(target)
     db.commit()
-    return {"message": f"Delete player with id {player_id} successfully !"}
+    return {"message": f"Delete players with id {player_id} successfully !"}
