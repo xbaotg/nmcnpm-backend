@@ -15,8 +15,7 @@ router = APIRouter()
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db: db_deps
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_deps
 ):
     try:
         user = authenticate_user(form_data.username, form_data.password, db)
@@ -29,6 +28,14 @@ async def login_for_access_token(
 
         token = create_access_token(user.user_name, user.user_id, timedelta(minutes=20))
         return {"access_token": token, "token_type": "bearer"}
-        
+
+    except HTTPException as e:
+        raise e
+
     except Exception as e:
-        raise HTTPException(status_code=404, detail=f"My bad: {str(e)}")
+        print(f"My bad: {str(e)}")
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="INTERNAL SERVER ERROR.",
+        )
