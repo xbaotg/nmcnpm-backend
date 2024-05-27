@@ -19,6 +19,6 @@ class Settings(BaseSettings):
     API_PREFIX_USERS: str
     API_PREFIX_AUTH: str
     API_PREFIX_PLAYERS: str
-
-
+    API_PREFIX_REFEREES: str
+    
 config = Settings()  # type: ignore

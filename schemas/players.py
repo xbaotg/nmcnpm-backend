@@ -3,7 +3,6 @@ from pydantic import BaseModel
 from datetime import date
 
 class PlayerCreate(BaseModel):
-    player_id: int
     player_name: str
     player_bday: date
     player_club: int
