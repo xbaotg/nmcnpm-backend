@@ -59,3 +59,15 @@ class Params(Base):
 
     max_goal_types = Column(Integer, index=True)
     max_goal_time = Column(Time, index=True)
+
+class Referees(Base):
+    __tablename__ = "referees"
+
+    ref_id = Column(Integer, primary_key=True, index=True)
+    ref_name = Column(String, index=True)
+    ref_birthd = Column(String, index=True)
+    ref_nation = Column(String, index=True)
+    ref_mail = Column(String, index=True)
+    show = Column(Boolean, index=True)
+
+
