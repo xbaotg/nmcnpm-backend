@@ -85,3 +85,71 @@ async def get_ref(ref_name: str, db: db_deps, threshold: int = 80):
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
     return matched_refs
 
+@route.put("/update_ref")
+async def update_ref(
+    ref_id: int, ref_update: RefUpdate, db: db_deps):  # current_user: CurrentUser):
+    try:
+        # hasPermission = get_user_permission(current_user, db, "manager")
+        target = db.query(Referees).filter(Referees.ref_id == ref_id).first()
+        update_info = ref_update.dict(exclude_unset=True)
+        for key, value in update_info.items():
+            if value == "string":
+                return {"message": f"{key} is required."}
+            setattr(target, key, value)
+        db.commit()
+        db.refresh(target)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}!")
+    return target
+
+@route.put("/delete_ref")
+async def delete_ref(ref_id: int, current_user: CurrentUser, db: db_deps):
+    hasPermission = get_user_permission(db, current_user, "admin")
+    try:
+        target = db.query(Referees).filter(Referees.ref_id == ref_id).first()
+
+        if target is None:
+            raise HTTPException(
+                status_code=204, detail="Can't find ref with id:{ref_id}"
+            )
+
+        if target.show == True:
+            target.show = False
+            db.commit()
+            return {"message": f"Deleted ref with id:{ref_id}"}
+        else:
+            return {
+                "message": f"Can't find ref with id:{ref_id}. Maybe deleted."
+            }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Internal Server Error: {str(e)} !"
+        )
+
+@route.put("/restore_deleted_ref")
+async def restore_deleted_ref(ref_id: int, current_user: CurrentUser, db: db_deps):
+    hasPermission = get_user_permission(db, current_user, "manager")
+    try:
+        target = db.query(Referees).filter(Referees.ref_id == ref_id).first()
+        if target.show != True:
+            target.show = True
+            db.commit()
+            return {"message": f"Restored ref with id:{ref_id}"}
+        else:
+            return {"message": f"Can't find ref with id:{ref_id}."}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Internal Server Error: {str(e)} !"
+        )
+    
+@route.delete("/permanently_delete_ref")
+async def permanently_delete_ref(ref_id: int, db: db_deps, current_user: CurrentUser):
+    hasPermission = get_user_permission(db, current_user, "manager")
+
+    target = db.query(Referees).filter(Referees.ref_id == ref_id).first()
+
+    db.delete(target)
+    db.commit()
+    return {"message": f"Delete refs with id {ref_id} successfully !"}

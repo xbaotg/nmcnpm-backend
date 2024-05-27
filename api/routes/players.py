@@ -230,3 +230,4 @@ async def permanently_delete_player(player_id: int, db: db_deps, current_user: C
     db.delete(target)
     db.commit()
     return {"message": f"Delete players with id {player_id} successfully !"}
+
