@@ -52,7 +52,7 @@ def isValidAge(bday: date):
 
 
 @route.post("/add_players")
-async def add_players(player: PlayerCreate, db: db_deps, current_user: CurrentUser):  # current_user: CurrentUser):
+async def add_players(player: PlayerCreate, db: db_deps, current_user: CurrentUser):
     hasPermission = get_user_permission(db, current_user, "admin")
 
     # check duplicated player
