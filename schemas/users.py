@@ -35,4 +35,3 @@ class UserUpdate(BaseModel):
     user_nation: str | None
     user_bday: date | None
     user_mail: str | None
-    user_nation: str | None

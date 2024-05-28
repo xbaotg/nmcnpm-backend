@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS Users (
 );
 
 CREATE TABLE IF NOT EXISTS Clubs (
-    club_id INTEGER PRIMARY KEY not NULL, 
+    club_id INTEGER PRIMARY KEY not NULL SERIAL, 
     club_name VARCHAR(255),
 	club_shortname VARCHAR(255), 
     total_player INTEGER,
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS Clubs (
 );
 
 CREATE TABLE IF NOT EXISTS Players (
-    player_id INTEGER PRIMARY KEY not NULL,
+    player_id INTEGER PRIMARY KEY not NULL SERIAL,
     player_name VARCHAR(255),
     player_bday DATE,
     player_club INTEGER, -- Foreign key reference to Club
@@ -85,17 +85,49 @@ CREATE TABLE IF NOT EXISTS Events (
 );
 
 CREATE TABLE IF NOT EXISTS Params (
-    club_max_foreign_young_player INTEGER,
-    match_between_two_teams INTEGER,
-    event_type VARCHAR(255),
-    minute_event INTEGER,
-    player_max_age INTEGER,
-    player_min_age INTEGER,
+    -- event_type VARCHAR(255),
+
+    min_player_age INTEGER,
+    max_player_age INTEGER,
+    min_club_player INTEGER,
+    max_club_player INTEGER,
+    max_foreign_player INTEGER,
+
     points_win INTEGER,
     points_draw INTEGER,
     points_lose INTEGER,
-    min_player_age INTEGER,
-    max_player_age INTEGER,
-    max_foreign_player INTEGER
+
+    max_goal_types INTEGER,
+    max_goal_time TIME
 );
 
+CREATE TABLE IF NOT EXISTS GoalTypes (
+    type_id INTEGER PRIMARY KEY SERIAL,
+    type_name VARCHAR(255)
+)
+
+-- default rule
+INSERT INTO GoalTypes (type_name) VALUES ('A'), ('B'), ('C');
+INSERT INTO Params (
+    min_player_age,
+    max_player_age,
+    min_club_player,
+    max_club_player,
+    max_foreign_player,
+    points_win,
+    points_draw,
+    points_lose,
+    max_goal_types, 
+    max_goal_time
+) VALUES (
+    16,
+    40, 
+    15, 
+    22,
+    3,
+    2,
+    1, 
+    0,
+    3, 
+    '01:30:00'
+)
