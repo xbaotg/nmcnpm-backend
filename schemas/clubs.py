@@ -4,13 +4,14 @@ from datetime import date
 
 from schemas.players import Player_Add_With_Club
 
+
 class Club_Response(BaseModel):
     club_name: str
     club_shortname: str
     total_player: int
     nation: str
-    manager: str # convert id to name
-    
+    manager: str  # convert id to name
+
     # show: bool
     # club_id: int
     class Config:
@@ -20,12 +21,12 @@ class Club_Response(BaseModel):
 class Club_Create(BaseModel):
     club_name: str
     club_shortname: str
-    # total_player: int # default = 0 
-    
+    # total_player: int # default = 0
+
     nation: str
     # manager: int # automatically take from the one create new club
     # show: bool # default = True
-    club_players : List[Player_Add_With_Club]
+    club_players: List[Player_Add_With_Club]
 
 
 class Club_Update(BaseModel):
@@ -33,7 +34,7 @@ class Club_Update(BaseModel):
     club_shortname: str
     # total_player: int
     nation: str
-    manager: int # convert id to name
-    
+    manager: int  # convert id to name
+
     # show: bool
     # club_id: int

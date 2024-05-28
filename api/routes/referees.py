@@ -12,6 +12,7 @@ from schemas.referees import RefCreate, RefShow, RefUpdate
 
 route = APIRouter()
 
+
 def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
     if current_user is None:
         raise HTTPException(status_code=401, detail="Authentication Failed")
@@ -41,6 +42,7 @@ def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
 
     return True
 
+
 @route.post("/add_refs")
 async def add_refs(ref: RefCreate, db: db_deps):  # current_user: CurrentUser):
     try:
@@ -66,7 +68,7 @@ async def add_refs(ref: RefCreate, db: db_deps):  # current_user: CurrentUser):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-    
+
 
 @route.get("/get_ref", response_model=List[RefShow])
 async def get_ref(ref_name: str, db: db_deps, threshold: int = 80):
@@ -75,8 +77,7 @@ async def get_ref(ref_name: str, db: db_deps, threshold: int = 80):
         matched_refs = [
             ref
             for ref in refs
-            if fuzz.partial_ratio(ref.ref_name.lower(), ref_name.lower())
-            >= threshold
+            if fuzz.partial_ratio(ref.ref_name.lower(), ref_name.lower()) >= threshold
         ]
 
         if not matched_refs:
@@ -85,9 +86,11 @@ async def get_ref(ref_name: str, db: db_deps, threshold: int = 80):
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
     return matched_refs
 
+
 @route.put("/update_ref")
 async def update_ref(
-    ref_id: int, ref_update: RefUpdate, db: db_deps):  # current_user: CurrentUser):
+    ref_id: int, ref_update: RefUpdate, db: db_deps
+):  # current_user: CurrentUser):
     try:
         # hasPermission = get_user_permission(current_user, db, "manager")
         target = db.query(Referees).filter(Referees.ref_id == ref_id).first()
@@ -102,6 +105,7 @@ async def update_ref(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}!")
     return target
+
 
 @route.put("/delete_ref")
 async def delete_ref(ref_id: int, current_user: CurrentUser, db: db_deps):
@@ -119,14 +123,13 @@ async def delete_ref(ref_id: int, current_user: CurrentUser, db: db_deps):
             db.commit()
             return {"message": f"Deleted ref with id:{ref_id}"}
         else:
-            return {
-                "message": f"Can't find ref with id:{ref_id}. Maybe deleted."
-            }
+            return {"message": f"Can't find ref with id:{ref_id}. Maybe deleted."}
 
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Internal Server Error: {str(e)} !"
         )
+
 
 @route.put("/restore_deleted_ref")
 async def restore_deleted_ref(ref_id: int, current_user: CurrentUser, db: db_deps):
@@ -143,7 +146,8 @@ async def restore_deleted_ref(ref_id: int, current_user: CurrentUser, db: db_dep
         raise HTTPException(
             status_code=500, detail=f"Internal Server Error: {str(e)} !"
         )
-    
+
+
 @route.delete("/permanently_delete_ref")
 async def permanently_delete_ref(ref_id: int, db: db_deps, current_user: CurrentUser):
     hasPermission = get_user_permission(db, current_user, "manager")

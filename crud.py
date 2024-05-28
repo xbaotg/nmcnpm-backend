@@ -10,6 +10,7 @@ from utils import is_valid_age, check_club_player
 
 from schemas.players import Player_Add_With_Club
 
+
 def authenticate_user(username: str, password: str, db: db_deps):
     try:
         user = db.query(Users).filter(Users.user_name == username).first()
@@ -40,7 +41,6 @@ def create_user(db: db_deps, new_user: UserCreateBase) -> Users | dict:
         return {
             "message": f"{newUserdict['user_name']} has been used, please choose another user name !"
         }
-    
 
     for key, value in newUserdict.items():
         if value == "string":  # kiem tra noi dung khong duoc nhap
@@ -70,7 +70,7 @@ def create_user(db: db_deps, new_user: UserCreateBase) -> Users | dict:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Can't add new user: {str(e)}")
 
-    
+
 def get_info_user(db: db_deps, current_user: CurrentUser):
     try:
         user = db.query(Users).filter(Users.user_name == current_user["user_name"])
@@ -91,26 +91,27 @@ def get_info_user(db: db_deps, current_user: CurrentUser):
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-def create_club(db: db_deps, current_user: CurrentUser, new_club: Club_Create) -> Clubs | dict:
+def create_club(
+    db: db_deps, current_user: CurrentUser, new_club: Club_Create
+) -> Clubs | dict:
 
     new_club = new_club.dict()
 
     # check duplicated club_name:
-    duplicated_name = db.query(Clubs).filter(Clubs.club_name == new_club['club_name']).first()
+    duplicated_name = (
+        db.query(Clubs).filter(Clubs.club_name == new_club["club_name"]).first()
+    )
     if duplicated_name is not None:
         return {
             "message": f"{new_club['club_name']} has been used, please choose another club name !"
         }
-    
+
     # check if current_user is another club's manager
     duplicated_manager = (
-        db.query(Clubs).filter(Clubs.manager == current_user['user_id']).first()
+        db.query(Clubs).filter(Clubs.manager == current_user["user_id"]).first()
     )
     if duplicated_manager is not None:
-        return {
-            "message": f"You can just create 1 club!"
-        }
-
+        return {"message": f"You can just create 1 club!"}
 
     # check not entered values
     for key, value in new_club.items():
@@ -118,7 +119,7 @@ def create_club(db: db_deps, current_user: CurrentUser, new_club: Club_Create) -
             continue
         if value == "string":
             return {"message": f"{key} is required."}
-    
+
     # auto complete data
     count = db.query(func.max(Clubs.club_id)).scalar()
     new_club["club_id"] = (count or 1) + 1
@@ -127,7 +128,6 @@ def create_club(db: db_deps, current_user: CurrentUser, new_club: Club_Create) -
 
     # extract club's players info
     club_players = new_club.pop("club_players")
-
 
     # check player num
     if not check_club_player(db, len(club_players)):
@@ -143,23 +143,26 @@ def create_club(db: db_deps, current_user: CurrentUser, new_club: Club_Create) -
         db.commit()
         return {"message": "Created club successfully!"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail = "Internal Server Error: Can't create new club")
-    
-
-    
+        raise HTTPException(
+            status_code=500, detail="Internal Server Error: Can't create new club"
+        )
 
     # add player
     iter = 0
     try:
         for player in club_players:
             # Kiểm tra cầu thủ trùng lặp
-            dup_player = db.query(Players).filter(Players.player_name == player['player_name']).first()
+            dup_player = (
+                db.query(Players)
+                .filter(Players.player_name == player["player_name"])
+                .first()
+            )
             if dup_player is not None:
                 if (
-                    dup_player.player_bday == player['player_bday'] and
-                    dup_player.player_nation == player['player_nation'] and
-                    dup_player.player_pos == player['player_pos'] and
-                    dup_player.js_number == player['js_number']
+                    dup_player.player_bday == player["player_bday"]
+                    and dup_player.player_nation == player["player_nation"]
+                    and dup_player.player_pos == player["player_pos"]
+                    and dup_player.js_number == player["js_number"]
                 ):
                     return {
                         "message": f"Player {player['player_name']} already existed!"
@@ -168,7 +171,7 @@ def create_club(db: db_deps, current_user: CurrentUser, new_club: Club_Create) -
             for key, value in newPlayerDict.items():
                 if value == "string":
                     return {"message": f"{key} is required."}
-                if key == "player_bday" and  not is_valid_age(value):
+                if key == "player_bday" and not is_valid_age(value):
                     return {"message": "Player age is not legal"}
 
             count = db.query(func.max(Players.player_id)).scalar()
@@ -187,7 +190,6 @@ def create_club(db: db_deps, current_user: CurrentUser, new_club: Club_Create) -
         db.rollback()
         db.query(Clubs).filter(Clubs.club_name == new_club.club_name).delete()
         db.commit()
-        raise HTTPException(status_code=500, detail=f"ksdjkaInternal Server Error: {str(e)}")
-
-    
-
+        raise HTTPException(
+            status_code=500, detail=f"ksdjkaInternal Server Error: {str(e)}"
+        )

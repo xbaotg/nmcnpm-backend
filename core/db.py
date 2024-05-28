@@ -6,6 +6,7 @@ from sqlalchemy import text
 from typing import Annotated
 from fastapi import Depends
 
+
 class Database:
     def __init__(self, db_url: str):
         self.engine = create_engine(db_url)
@@ -50,6 +51,3 @@ db_url = f"postgresql://{config.POSTGRES_USER}:{config.POSTGRES_PASSWORD}@{confi
 db = Database(db_url)
 Base = db.get_base()
 db_deps = Annotated[Session, Depends(db.get_db)]
-
-
-        

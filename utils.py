@@ -16,6 +16,7 @@ POINTS_LOSE = 0
 MAX_GOAL_TYPES = 3
 MAX_GOAL_TIME = "01:30:00"
 
+
 def is_valid_age(bday: date):
     now = date.today()
     age = now.year - bday.year - ((now.month, now.day) < (bday.month, bday.day))
@@ -24,6 +25,7 @@ def is_valid_age(bday: date):
         return False
 
     return True
+
 
 def get_user_role(db: db_deps, current_user: CurrentUser):
     if current_user is None:
@@ -35,7 +37,8 @@ def get_user_role(db: db_deps, current_user: CurrentUser):
 
     return user_role
 
-def check_is_manager(db: db_deps, current_user : CurrentUser):
+
+def check_is_manager(db: db_deps, current_user: CurrentUser):
     if current_user is None:
         raise HTTPException(status_code=401, detail="Authentication Failed")
 
@@ -57,21 +60,23 @@ def check_is_manager(db: db_deps, current_user : CurrentUser):
             )
 
         return True
-    elif user_role == "admin": 
+    elif user_role == "admin":
         raise HTTPException(
             status_code=203, detail="Admins doesn't have permission to create club"
         )
 
     return True
 
+
 def check_owner(db: db_deps, current_user: CurrentUser, club_id: int):
     club = db.query(Clubs).filter(Clubs.club_id == club_id).first()
     if club is None:
         return None
-    if (current_user['user_id'] == club.manager):
+    if current_user["user_id"] == club.manager:
         return True
 
     return False
+
 
 def check_club_player(db: db_deps, total_player: int):
     if total_player < MIN_CLUB_PLAYER or total_player > MAX_CLUB_PLAYER:
