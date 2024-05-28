@@ -8,7 +8,7 @@ from api.deps import CurrentUser, List
 from core.db import db as code_db
 from core.db import db_deps
 from schemas.db import Clubs, Players, Users
-from schemas.players import PlayerCreate, PlayerShow, PlayerUpdate
+from schemas.players import PlayerCreate, PlayerShow, PlayerUpdate, Player_Add_With_Club
 
 route = APIRouter()
 
@@ -52,7 +52,23 @@ def isValidAge(bday: date):
 
 
 @route.post("/add_players")
-async def add_players(player: PlayerCreate, db: db_deps):  # current_user: CurrentUser):
+async def add_players(player: PlayerCreate, db: db_deps, current_user: CurrentUser):  # current_user: CurrentUser):
+    hasPermission = get_user_permission(db, current_user, "admin")
+
+    # check duplicated player
+    dup_player = db.query(Players).filter(Players.player_name == player.player_name).first()
+    if dup_player is not None:
+        if (
+            dup_player.player_bday == player.player_bday and
+            dup_player.player_club == player.player_club and
+            dup_player.player_nation == player.player_nation and
+            dup_player.player_pos == player.player_pos and
+            dup_player.js_number == player.js_number
+        ):
+            return {
+                "message": "Player already existed !"
+            }
+
     try:
         # hasPermission = get_user_permission(current_user, db, "manager")
         newPlayerDict = player.dict()
@@ -60,7 +76,7 @@ async def add_players(player: PlayerCreate, db: db_deps):  # current_user: Curre
             if value == "string":
                 return {"message": f"{key} is required."}
             if key == "player_bday" and not isValidAge(value):
-                return {"message": "User age is not legal"}
+                return {"message": "Player age is not legal"}
 
         count = db.query(func.max(Players.player_id)).scalar()
         newPlayerDict["player_id"] = (count or 0) + 1
@@ -78,6 +94,7 @@ async def add_players(player: PlayerCreate, db: db_deps):  # current_user: Curre
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
 
 
 @route.get("/get_players_by_name", response_model=List[PlayerShow])

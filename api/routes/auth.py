@@ -26,7 +26,7 @@ async def login_for_access_token(
                 detail="INCORRECT USERNAME OR PASSWORD.",
             )
 
-        token = create_access_token(user.user_name, user.user_id, timedelta(minutes=20))
+        token = create_access_token(user.user_name, user.user_id, timedelta(minutes=1440))
         return {"access_token": token, "token_type": "bearer"}
 
     except HTTPException as e:
