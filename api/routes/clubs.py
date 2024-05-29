@@ -31,7 +31,6 @@ async def get_all_clubs(db: db_deps):
                 "club_name": club.club_name,
                 "club_shortname": club.club_shortname,
                 "total_player": club.total_player,
-                "nation": club.nation,
                 "manager": manager_full_name
             }
             result.append(club_data)
@@ -46,7 +45,8 @@ async def get_all_clubs(db: db_deps):
 async def search_club_by_name(db: db_deps, search_name: str, threshold:int = 80):
     db_clubs = db.query(Clubs).filter(Clubs.show == True).all()
     if not db_clubs:
-        raise HTTPException(status_code=204, detail="Can't find players of club")
+        raise HTTPException(status_code=204, detail="Can't find any clubs")
+
     result = []
     # get manager's full name from manager's id
     for club in db_clubs:
@@ -61,7 +61,6 @@ async def search_club_by_name(db: db_deps, search_name: str, threshold:int = 80)
             "club_name": club.club_name,
             "club_shortname": club.club_shortname,
             "total_player": club.total_player,
-            "nation": club.nation,
             "manager": manager_full_name
         }
         result.append(club_data)
@@ -73,9 +72,23 @@ async def search_club_by_name(db: db_deps, search_name: str, threshold:int = 80)
 
     return result
 
-@route.get("/get-players-of-clubs/{club_id}", response_model=List[PlayerShow]|dict)
-async def get_all_players_of_clubs(db: db_deps, club_id: int):
-    db_players = db.query(Players).filter(Players.player_club == club_id).all()
+@route.get("/get-players-of-clubs/{club_name}", response_model=List[PlayerShow]|dict)
+async def get_all_players_of_clubs(db: db_deps, club_name: str):
+    db_clubs = db.query(Clubs).filter(Clubs.show == True).all()
+
+    search_club = None
+    for club in db_clubs:
+        len_ = len(club_name)/len(club.club_name)
+        if (fuzz.partial_ratio(club.club_name.lower(), club_name.lower()) >= 98 and len_ >= 0.6 and len_ <= 1.0):
+            print(len_)
+            search_club = club
+
+    if not search_club:
+        return {
+            "message": "Can't find any clubs"
+        }
+    
+    db_players = db.query(Players).filter(Players.player_club == search_club.club_id).all()
     if db_players:
         return db_players
     else:
@@ -92,13 +105,28 @@ async def create_club(db: db_deps, current_user : CurrentUser, new_club: Club_Cr
 
 
 
-@route.put("/update-club/{club_id}", response_model=Club_Update|dict)
-async def update_club(db: db_deps, current_user: CurrentUser, club_id: int, new_info: Club_Update):
-    print("Start")   
+@route.put("/update-club/{club_name}", response_model=Club_Update|dict)
+async def update_club(db: db_deps, current_user: CurrentUser, club_name: str, new_info: Club_Update):
+    # search club by name 
+    clubs = db.query(Clubs).filter(Clubs.show == True).all()
+
+    search_club = None
+    for club in db_clubs:
+        len_ = len(club_name)/len(club.club_name)
+        if (fuzz.partial_ratio(club.club_name.lower(), club_name.lower()) >= 98 and len_ >= 0.6 and len_ <= 1.0):
+            print(len_)
+            search_club = club
+
+    if search_club is None:
+        return {
+            "message": "Can't find any clubs"
+        }
+
+    club_id = search_club.club_id
+
+    # are you the owner of this club ?
     user_role = get_user_role(db, current_user)
-    print("Check")
     is_owner = check_owner(db,current_user,club_id)
-    print("Done")
     if is_owner is None:
         raise HTTPException(status_code=204, detail=f"Can't find the club with ID {club_id} !")
     if not is_owner and user_role == "manager":
@@ -109,8 +137,6 @@ async def update_club(db: db_deps, current_user: CurrentUser, club_id: int, new_
        update_info = new_info.dict(exclude_unset=True)
        for key, value in update_info.items():  #
            if value == "string":
-               continue
-           if key == "manager" and value == 0:
                continue
            setattr(target, key, value)
        db.commit()
