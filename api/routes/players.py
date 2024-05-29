@@ -9,6 +9,7 @@ from core.db import db as code_db
 from core.db import db_deps
 from schemas.db import Clubs, Players, Users
 from schemas.players import PlayerCreate, PlayerShow, PlayerUpdate, Player_Add_With_Club
+from utils import is_valid_age
 
 route = APIRouter()
 
@@ -43,13 +44,6 @@ def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
     return True
 
 
-def isValidAge(bday: date):
-    now = date.today()
-    age = now.year - bday.year - ((now.month, now.day) < (bday.month, bday.day))
-    if age < 16 or age > 40:
-        return False
-    return True
-
 
 @route.post("/add_players")
 async def add_players(player: PlayerCreate, db: db_deps, current_user: CurrentUser):  # current_user: CurrentUser):
@@ -75,7 +69,7 @@ async def add_players(player: PlayerCreate, db: db_deps, current_user: CurrentUs
         for key, value in newPlayerDict.items():
             if value == "string":
                 return {"message": f"{key} is required."}
-            if key == "player_bday" and not isValidAge(value):
+            if key == "player_bday" and not is_valid_age(value):
                 return {"message": "Player age is not legal"}
 
         count = db.query(func.max(Players.player_id)).scalar()

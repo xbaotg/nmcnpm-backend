@@ -9,7 +9,7 @@ from schemas.players import PlayerShow
 from crud import create_club as crud_create_club
 
 from api.deps import List, CurrentUser, get_password_hash, fuzz
-from utils import check_owner, check_is_manager, get_user_role
+from utils import check_owner, check_is_manager, get_user_role, auto_count_total_player
 
 route = APIRouter()
 
@@ -27,6 +27,7 @@ async def get_all_clubs(db: db_deps):
             manager_full_name = db.query(Users).filter(Users.user_id == club.manager).first().full_name
             if not manager_full_name:
                 raise HTTPException(status_code=204, detail= f"Can't find manager of club: {club.club_name}")
+            auto_count_total_player(db, club.club_id)
             club_data = {
                 "club_name": club.club_name,
                 "club_shortname": club.club_shortname,
@@ -88,7 +89,7 @@ async def get_all_players_of_clubs(db: db_deps, club_name: str):
             "message": "Can't find any clubs"
         }
     
-    db_players = db.query(Players).filter(Players.player_club == search_club.club_id).all()
+    db_players = db.query(Players).filter(Players.player_club == search_club.club_id, Players.show == True).all()
     if db_players:
         return db_players
     else:
@@ -146,3 +147,83 @@ async def update_club(db: db_deps, current_user: CurrentUser, club_name: str, ne
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}!")
 
 
+# DELETE 
+@route.delete("/delete-club")
+async def update_club(db: db_deps, current_user: CurrentUser, club_name: str):
+    # search club by name 
+    db_clubs = db.query(Clubs).filter(Clubs.show == True).all()
+
+    search_club = None
+    for club in db_clubs:
+        len_ = len(club_name)/len(club.club_name)
+        if (fuzz.partial_ratio(club.club_name.lower(), club_name.lower()) >= 100 and len_ >= 0.9 and len_ <= 1.0):
+            search_club = club
+
+    if search_club is None:
+        return {
+            "message": "Can't find any clubs"
+        }
+
+    club_id = search_club.club_id
+
+    # are you the owner of this club ?
+    user_role = get_user_role(db, current_user)
+    is_owner = check_owner(db,current_user,club_id)
+    if is_owner is None:
+        raise HTTPException(status_code=204, detail=f"Can't find the club with ID {club_id} !")
+    if not is_owner and user_role == "manager":
+        return {"message": "You are not the owner of this club"}
+
+    # delete = show -> False
+    #       delete all players first
+    players_of_clubs = db.query(Players).filter(Players.player_club == club_id, Players.show == True).all()
+    for player in players_of_clubs:
+        player.show = False
+    db.commit()
+    # delete club
+    target = db.query(Clubs).filter(Clubs.club_id == club_id, Clubs.show == True).first()
+    target.show = False
+    db.commit()
+    
+    return {"message": f"Deleted {club_name} and all players of it !"}
+
+    
+ # restore    
+@route.put("/restore-club")
+async def update_club(db: db_deps, current_user: CurrentUser, club_name: str):
+    # search club by name 
+    db_clubs = db.query(Clubs).filter(Clubs.show == False).all()
+
+    search_club = None
+    for club in db_clubs:
+        len_ = len(club_name)/len(club.club_name)
+        if (fuzz.partial_ratio(club.club_name.lower(), club_name.lower()) >= 100 and len_ >= 0.9 and len_ <= 1.0):
+            search_club = club
+
+    if search_club is None:
+        return {
+            "message": "Can't find any clubs"
+        }
+
+    club_id = search_club.club_id
+
+    # are you the owner of this club ?
+    user_role = get_user_role(db, current_user)
+    is_owner = check_owner(db,current_user,club_id)
+    if is_owner is None:
+        raise HTTPException(status_code=204, detail=f"Can't find the club with ID {club_id} !")
+    if not is_owner and user_role == "manager":
+        return {"message": "You are not the owner of this club"}
+
+    # restore = show -> True
+    #       restore all players first
+    players_of_clubs = db.query(Players).filter(Players.player_club == club_id, Players.show == False).all()
+    for player in players_of_clubs:
+        player.show = True
+    db.commit()
+    # restore club
+    target = db.query(Clubs).filter(Clubs.club_id == club_id, Clubs.show == False).first()
+    target.show = True
+    db.commit()
+    
+    return {"message": f"Restored {club_name} and all players of it !"}

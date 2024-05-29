@@ -6,7 +6,7 @@ from core.security import verify_password, get_password_hash
 from api.deps import CurrentUser, Annotated, List
 from schemas.users import UserCreateBase
 from schemas.clubs import Club_Create
-from utils import is_valid_age, check_club_player
+from utils import is_valid_age, check_club_player_num, check_foreign_player
 
 from schemas.players import Player_Add_With_Club
 
@@ -104,7 +104,7 @@ def create_club(db: db_deps, current_user: CurrentUser, new_club: Club_Create) -
     
     # check if current_user is another club's manager
     duplicated_manager = (
-        db.query(Clubs).filter(Clubs.manager == current_user['user_id']).first()
+        db.query(Clubs).filter(Clubs.manager == current_user['user_id'], Clubs.show == True).first()
     )
     if duplicated_manager is not None:
         return {
@@ -130,10 +130,21 @@ def create_club(db: db_deps, current_user: CurrentUser, new_club: Club_Create) -
 
 
     # check player num
-    if not check_club_player(db, len(club_players)):
+    if not check_club_player_num(db, len(club_players)):
         db.rollback()
         return {"message": "Club doesn't have enough players"}
+    
+    # check maximum foreign player
+    count = 0
+    for player in club_players:
+        if player.palyer_nation != "VIE":
+            count += 1
+    valid, max_foreign_player = check_foreign_player(db, count)
+    if not valid:
+        return {"message": f"Too many foreign players (maximum is {max_foreign_player})"}
 
+    
+    # add total players
     new_club["total_player"] = len(club_players)
 
     # commit to database
@@ -180,6 +191,7 @@ def create_club(db: db_deps, current_user: CurrentUser, new_club: Club_Create) -
 
             db.add(new_db_player)
 
+
         db.commit()
         db.refresh(new_db_club)
         return {"message": "Created club and players successfully!"}
@@ -187,7 +199,7 @@ def create_club(db: db_deps, current_user: CurrentUser, new_club: Club_Create) -
         db.rollback()
         db.query(Clubs).filter(Clubs.club_name == new_club.club_name).delete()
         db.commit()
-        raise HTTPException(status_code=500, detail=f"ksdjkaInternal Server Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
     
 

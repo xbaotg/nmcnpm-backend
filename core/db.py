@@ -51,5 +51,11 @@ db = Database(db_url)
 Base = db.get_base()
 db_deps = Annotated[Session, Depends(db.get_db)]
 
-
-        
+def get_params(model, db: Session):
+    try: 
+        params = db.query(model).first()
+        return params
+    # finally:
+    #     db.close()
+    except Exception as e:
+        return {"message": f"Error: {str(e)}"}
