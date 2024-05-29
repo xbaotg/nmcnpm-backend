@@ -17,7 +17,7 @@ from schemas.db import Params, Users
 
 #         self.MAX_GOAL_TYPES = stats.max_goal_types
 #         self.MAX_GOAL_TIME = stats.max_goal_time
-    
+
 #     def get_MIN_PLAYER_AGE(self):
 #         return self.MIN_PLAYER_AGE
 

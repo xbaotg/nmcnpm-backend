@@ -44,24 +44,25 @@ def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
     return True
 
 
-
 @route.post("/add_players")
-async def add_players(player: PlayerCreate, db: db_deps, current_user: CurrentUser):  # current_user: CurrentUser):
+async def add_players(
+    player: PlayerCreate, db: db_deps, current_user: CurrentUser
+):  # current_user: CurrentUser):
     hasPermission = get_user_permission(db, current_user, "admin")
 
     # check duplicated player
-    dup_player = db.query(Players).filter(Players.player_name == player.player_name).first()
+    dup_player = (
+        db.query(Players).filter(Players.player_name == player.player_name).first()
+    )
     if dup_player is not None:
         if (
-            dup_player.player_bday == player.player_bday and
-            dup_player.player_club == player.player_club and
-            dup_player.player_nation == player.player_nation and
-            dup_player.player_pos == player.player_pos and
-            dup_player.js_number == player.js_number
+            dup_player.player_bday == player.player_bday
+            and dup_player.player_club == player.player_club
+            and dup_player.player_nation == player.player_nation
+            and dup_player.player_pos == player.player_pos
+            and dup_player.js_number == player.js_number
         ):
-            return {
-                "message": "Player already existed !"
-            }
+            return {"message": "Player already existed !"}
 
     try:
         # hasPermission = get_user_permission(current_user, db, "manager")
@@ -88,7 +89,6 @@ async def add_players(player: PlayerCreate, db: db_deps, current_user: CurrentUs
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-
 
 
 @route.get("/get_players_by_name", response_model=List[PlayerShow])
@@ -173,7 +173,8 @@ async def get_players_by_nation(nation: str, db: db_deps, threshold: int = 80):
 
 @route.put("/update_player")
 async def update_player(
-    playerID: int, player_update: PlayerUpdate, db: db_deps):  # current_user: CurrentUser):
+    playerID: int, player_update: PlayerUpdate, db: db_deps
+):  # current_user: CurrentUser):
     try:
         # hasPermission = get_user_permission(current_user, db, "manager")
         target = db.query(Players).filter(Players.player_id == playerID).first()
@@ -191,6 +192,7 @@ async def update_player(
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}!")
     return target
 
+
 @route.put("/delete_player")
 async def delete_player(playerID: int, current_user: CurrentUser, db: db_deps):
     hasPermission = get_user_permission(db, current_user, "manager")
@@ -207,17 +209,18 @@ async def delete_player(playerID: int, current_user: CurrentUser, db: db_deps):
             db.commit()
             return {"message": f"Deleted player with id:{playerID}"}
         else:
-            return {
-                "message": f"Can't find player with id:{playerID}. Maybe deleted."
-            }
+            return {"message": f"Can't find player with id:{playerID}. Maybe deleted."}
 
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Internal Server Error: {str(e)} !"
         )
-    
+
+
 @route.put("/restore_deleted_player")
-async def restore_deleted_player(player_id: int, current_user: CurrentUser, db: db_deps):
+async def restore_deleted_player(
+    player_id: int, current_user: CurrentUser, db: db_deps
+):
     hasPermission = get_user_permission(db, current_user, "manager")
     try:
         target = db.query(Players).filter(Players.player_id == player_id).first()
@@ -231,9 +234,12 @@ async def restore_deleted_player(player_id: int, current_user: CurrentUser, db: 
         raise HTTPException(
             status_code=500, detail=f"Internal Server Error: {str(e)} !"
         )
-    
+
+
 @route.delete("/permanently_delete_player")
-async def permanently_delete_player(player_id: int, db: db_deps, current_user: CurrentUser):
+async def permanently_delete_player(
+    player_id: int, db: db_deps, current_user: CurrentUser
+):
     hasPermission = get_user_permission(db, current_user, "manager")
 
     target = db.query(Players).filter(Players.player_id == player_id).first()
@@ -241,4 +247,3 @@ async def permanently_delete_player(player_id: int, db: db_deps, current_user: C
     db.delete(target)
     db.commit()
     return {"message": f"Delete players with id {player_id} successfully !"}
-

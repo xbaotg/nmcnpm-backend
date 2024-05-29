@@ -40,24 +40,23 @@ class Players(Base):
     show = Column(Boolean, index=True)
 
 
-
-
 class Params(Base):
     __tablename__ = "params"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    min_player_age = Column(Integer, index = True)
+    min_player_age = Column(Integer, index=True)
     max_player_age = Column(Integer, index=True)
     min_club_player = Column(Integer, index=True)
     max_club_player = Column(Integer, index=True)
     max_foreign_player = Column(Integer, index=True)
-    
+
     points_win = Column(Integer, index=True)
     points_draw = Column(Integer, index=True)
     points_lose = Column(Integer, index=True)
 
     max_goal_types = Column(Integer, index=True)
     max_goal_time = Column(Time, index=True)
+
 
 class Referees(Base):
     __tablename__ = "referees"
@@ -68,5 +67,3 @@ class Referees(Base):
     ref_nation = Column(String, index=True)
     ref_mail = Column(String, index=True)
     show = Column(Boolean, index=True)
-
-

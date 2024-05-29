@@ -12,11 +12,13 @@ from api.deps import List, CurrentUser, get_password_hash, fuzz
 
 route = APIRouter()
 
+
 @route.get("/test")
 async def hehe():
     params = get_params(Params, db)
     return {"message": f"hehehehe: {(params.min_club_player)}"}
     return params
+
 
 def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
     if current_user is None:
@@ -47,15 +49,14 @@ def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
 
     return True
 
-        
+
 @route.get("/get-message")
-async def get_message(db: db_deps, current_user : CurrentUser):
+async def get_message(db: db_deps, current_user: CurrentUser):
 
     hasPermission = get_user_permission(db, current_user, "admin")
 
-    return {
-        "message": "Hello my friends."
-    }
+    return {"message": "Hello my friends."}
+
 
 @route.post("/create-user")
 async def create_user_route(

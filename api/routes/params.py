@@ -8,9 +8,15 @@ from api.deps import CurrentUser, List
 from core.db import db_deps, Depends
 from schemas.db import Clubs, Players, Users, Params
 from schemas.params import Show_Params, Update_Params, Annotated
-from utils import is_valid_age, check_foreign_player, check_club_player_num, auto_count_total_player
+from utils import (
+    is_valid_age,
+    check_foreign_player,
+    check_club_player_num,
+    auto_count_total_player,
+)
 
 route = APIRouter()
+
 
 def is_admin(db: db_deps, current_user: CurrentUser):
     if current_user is None:
@@ -28,70 +34,93 @@ def is_admin(db: db_deps, current_user: CurrentUser):
 
     return True
 
+
 # GET
-@route.get("/show-params/", response_model = Show_Params)
+@route.get("/show-params/", response_model=Show_Params)
 async def show_params(db: db_deps, current_user: CurrentUser):
     is_admin(db, current_user)
     try:
         params = db.query(Params).first()
         return params
     except Exception as e:
-        raise HTTPException(status_code=500, detail = f"Internal Server Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
 
 # UPDATE
-@route.put('/update-params/')
-async def update_params(db: db_deps, current_user: CurrentUser, new_info: Update_Params):
+@route.put("/update-params/")
+async def update_params(
+    db: db_deps, current_user: CurrentUser, new_info: Update_Params
+):
     is_admin(db, current_user)
     try:
         params = db.query(Params).first()
     except Exception as e:
-        raise HTTPException(status_code=500, detail = f"Internal Server Error: {str(e)}")
-    
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
     new_info_dict = new_info.dict()
 
     # check if there're conflict data
-        #check club's player num (debugging)
+    # check club's player num (debugging)
     db_clubs = db.query(Clubs).filter(Clubs.show == True).all()
     for club in db_clubs:
-        count = db.query(Players).filter(Players.show == True, Players.player_club == club.club_id).count()
+        count = (
+            db.query(Players)
+            .filter(Players.show == True, Players.player_club == club.club_id)
+            .count()
+        )
         if not check_club_player_num(db, count):
             conflict = True
             db.rollback()
-            return {"message": "There conflict data with new MIN/MAX players of a club, please change it first !"}
+            return {
+                "message": "There conflict data with new MIN/MAX players of a club, please change it first !"
+            }
 
         # check club's foreign players (debugging)
-        count = db.query(Players).filter(
-            Players.show == True, 
-            Players.player_club == club.club_id,
-            Players.player_nation != "VIE"
-        ).count()
+        count = (
+            db.query(Players)
+            .filter(
+                Players.show == True,
+                Players.player_club == club.club_id,
+                Players.player_nation != "VIE",
+            )
+            .count()
+        )
         if not check_foreign_player(db, count):
             conflict = True
             db.rollback()
-            return {"message": "There conflict data with new MIN/MAX foreign players of a club, please change it first !"}
+            return {
+                "message": "There conflict data with new MIN/MAX foreign players of a club, please change it first !"
+            }
 
         # check player age (good to use now)
     db_players = db.query(Players).filter(Players.show == True).all()
     for player in db_players:
-        if not is_valid_age(player.player_bday,db, new_info.min_player_age, new_info.max_player_age, True):
+        if not is_valid_age(
+            player.player_bday,
+            db,
+            new_info.min_player_age,
+            new_info.max_player_age,
+            True,
+        ):
             conflict = True
             db.rollback()
-            return {"message": "There conflict data with new MIN/MAX player age, please change it first !"}
+            return {
+                "message": "There conflict data with new MIN/MAX player age, please change it first !"
+            }
 
     # update info
     for key, value in new_info_dict.items():
-        if value == 0 :
+        if value == 0:
             continue
         if key == "max_goal_time" and value == params.max_goal_time:
             continue
         setattr(params, key, value)
-    
+
     db.commit()
 
     db.refresh(params)
 
     return params
-
 
 
 # default values

@@ -6,6 +6,7 @@ from sqlalchemy import text
 from typing import Annotated
 from fastapi import Depends
 
+
 class Database:
     def __init__(self, db_url: str):
         self.engine = create_engine(db_url)
@@ -51,8 +52,9 @@ db = Database(db_url)
 Base = db.get_base()
 db_deps = Annotated[Session, Depends(db.get_db)]
 
+
 def get_params(model, db: Session):
-    try: 
+    try:
         params = db.query(model).first()
         return params
     # finally:
