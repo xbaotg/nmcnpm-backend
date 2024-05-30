@@ -111,6 +111,7 @@ def create_club(
         db.query(Clubs)
         .filter(Clubs.manager == current_user["user_id"], Clubs.show == True)
         .first()
+
     )
     if duplicated_manager is not None:
         return {"message": f"You can just create 1 club!"}
@@ -204,4 +205,7 @@ def create_club(
         db.rollback()
         db.query(Clubs).filter(Clubs.club_name == new_club.club_name).delete()
         db.commit()
+
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+

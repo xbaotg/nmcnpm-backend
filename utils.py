@@ -19,6 +19,7 @@ MAX_GOAL_TYPES = 3
 MAX_GOAL_TIME = "01:30:00"
 
 
+# overwrite to use when update params, checking conflict data with new MIN/MAX age
 def is_valid_age(
     bday: date, db: db = db, MIN: int = 16, MAX: int = 40, overwrite: bool = False
 ):
@@ -33,6 +34,7 @@ def is_valid_age(
     # params = get_params(Params, db)
     # MIN_PLAYER_AGE = params.min_player_age
     # MAX_PLAYER_AGE = params.max_player_age
+
     now = date.today()
     age = now.year - bday.year - ((now.month, now.day) < (bday.month, bday.day))
     print("age = ", age)
@@ -94,6 +96,7 @@ def check_owner(db: db_deps, current_user: CurrentUser, club_id: int):
     return False
 
 
+
 # Use when add or delete a player from club
 def check_club_player_num(db: db_deps, total_player: int):
     params = get_params(Params, db)
@@ -131,3 +134,9 @@ def auto_count_total_player(db: db_deps, club_id: int):
     target.total_player = count
     db.commit()
     return count
+
+def check_club_player(db: db_deps, total_player: int):
+    if total_player < MIN_CLUB_PLAYER or total_player > MAX_CLUB_PLAYER:
+        return False
+    return True
+

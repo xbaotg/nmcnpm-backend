@@ -82,7 +82,7 @@ async def get_all_users(current_user: CurrentUser, db: db_deps):
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@route.get("/get-info", response_model=UserReg)
+@route.get("/me", response_model=UserReg)
 async def get_user_info(current_user: CurrentUser, db: db_deps):
     try:
         res = get_info_user(db, current_user)
