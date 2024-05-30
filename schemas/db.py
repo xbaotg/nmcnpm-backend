@@ -23,7 +23,6 @@ class Clubs(Base):
     club_name = Column(String, index=True)
     club_shortname = Column(String, index=True)
     total_player = Column(Integer, index=True)
-    nation = Column(String, index=True)
     manager = Column(Integer, ForeignKey("users.user_id"), index=True)
     show = Column(Boolean, index=True)
 

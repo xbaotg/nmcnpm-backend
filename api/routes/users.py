@@ -1,6 +1,6 @@
 from datetime import date
 
-from core.db import db_deps, db as code_db
+from core.db import db_deps, db, get_params
 from crud import create_user, get_info_user
 from fastapi import APIRouter, HTTPException, Depends
 from schemas.db import Users, Params
@@ -9,7 +9,15 @@ from sqlalchemy import func
 
 from api.deps import List, CurrentUser, get_password_hash, fuzz
 
+
 route = APIRouter()
+
+
+@route.get("/test")
+async def hehe():
+    params = get_params(Params, db)
+    return {"message": f"hehehehe: {(params.min_club_player)}"}
+    return params
 
 
 def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):

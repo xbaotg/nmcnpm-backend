@@ -9,7 +9,6 @@ class Club_Response(BaseModel):
     club_name: str
     club_shortname: str
     total_player: int
-    nation: str
     manager: str  # convert id to name
 
     # show: bool
@@ -23,7 +22,7 @@ class Club_Create(BaseModel):
     club_shortname: str
     # total_player: int # default = 0
 
-    nation: str
+
     # manager: int # automatically take from the one create new club
     # show: bool # default = True
     club_players: List[Player_Add_With_Club]
@@ -33,8 +32,7 @@ class Club_Update(BaseModel):
     club_name: str
     club_shortname: str
     # total_player: int
-    nation: str
-    manager: int  # convert id to name
+
 
     # show: bool
     # club_id: int
