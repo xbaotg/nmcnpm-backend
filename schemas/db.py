@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Date, Time
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Date, Time, DateTime
 from core.db import Base
 
 
@@ -66,4 +66,28 @@ class Referees(Base):
     ref_birthd = Column(String, index=True)
     ref_nation = Column(String, index=True)
     ref_mail = Column(String, index=True)
+    show = Column(Boolean, index=True)
+
+
+class Matches(Base):
+    __tablename__ = "matches"
+
+    match_id = Column(Integer, primary_key=True, index=True)
+    team1 = Column(Integer, ForeignKey("clubs.club_id"), index=True)
+    team2 = Column(Integer, ForeignKey("clubs.club_id"), index=True)
+    goal1 = Column(Integer, index=True)
+    goal2 = Column(Integer, index=True)
+    start = Column(DateTime, index=True)
+    ref_id = Column(Integer, ForeignKey("referees.ref_id"), index=True)
+    var_id = Column(Integer, ForeignKey("referees.ref_id"), index=True)
+    lineman_id = Column(Integer, ForeignKey("referees.ref_id"), index=True)
+    show = Column(Boolean, index=True)
+     
+class Events(Base):
+    __tablename__ = "events"
+
+    match_id = Column(Integer, ForeignKey("matches.match_id"), primary_key=True, index=True)
+    minute_event = Column(Time, primary_key=True, index=True)
+    events = Column(String, primary_key=True, index=True)
+    player_id = Column(Integer, ForeignKey("players.player_id"), index=True)
     show = Column(Boolean, index=True)

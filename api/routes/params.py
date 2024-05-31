@@ -13,6 +13,7 @@ from utils import (
     check_foreign_player,
     check_club_player_num,
     auto_count_total_player,
+    get_params
 )
 
 route = APIRouter()
@@ -51,13 +52,13 @@ async def show_params(db: db_deps, current_user: CurrentUser):
 async def update_params(
     db: db_deps, current_user: CurrentUser, new_info: Update_Params
 ):
+    # Admin only
     is_admin(db, current_user)
     try:
         params = db.query(Params).first()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-
-    new_info_dict = new_info.dict()
+    
 
     # check if there're conflict data
     # check club's player num (debugging)
@@ -68,11 +69,12 @@ async def update_params(
             .filter(Players.show == True, Players.player_club == club.club_id)
             .count()
         )
-        if not check_club_player_num(db, count):
+        if (count < new_info.min_club_player or count > new_info.max_club_player):
+            print(f"{new_info.min_club_player} : {count} : {new_info.max_club_player}")
             conflict = True
             db.rollback()
             return {
-                "message": "There conflict data with new MIN/MAX players of a club, please change it first !"
+                "message": "There's conflict data with new MIN/MAX players of a club, please change it first !"
             }
 
         # check club's foreign players (debugging)
@@ -85,11 +87,11 @@ async def update_params(
             )
             .count()
         )
-        if not check_foreign_player(db, count):
+        if  (count > new_info.max_foreign_player):
             conflict = True
             db.rollback()
             return {
-                "message": "There conflict data with new MIN/MAX foreign players of a club, please change it first !"
+                "message": "There's conflict data with new MIN/MAX foreign players of a club, please change it first !"
             }
 
         # check player age (good to use now)
@@ -105,10 +107,11 @@ async def update_params(
             conflict = True
             db.rollback()
             return {
-                "message": "There conflict data with new MIN/MAX player age, please change it first !"
+                "message": "There's conflict data with new MIN/MAX player age, please change it first !"
             }
 
     # update info
+    new_info_dict = new_info.dict()
     for key, value in new_info_dict.items():
         if value == 0:
             continue

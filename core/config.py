@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     API_PREFIX_PLAYERS: str
     API_PREFIX_REFEREES: str
     API_PREFIX_CLUBS: str
+    API_PREFIX_MATCHES: str
 
 
 config = Settings()  # type: ignore
