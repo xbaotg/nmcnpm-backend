@@ -61,3 +61,5 @@ def get_params(model, db: Session):
     #     db.close()
     except Exception as e:
         return {"message": f"Error: {str(e)}"}
+
+

@@ -39,8 +39,11 @@ POINTS_LOSE = 0
 MAX_GOAL_TYPES = 3
 MAX_GOAL_TIME = "01:30:00"
 
+
 # overwrite to use when update params, checking conflict data with new MIN/MAX age
-def is_valid_age(bday: date, db: db = db, MIN: int = 16, MAX: int = 40, overwrite: bool = False):
+def is_valid_age(
+    bday: date, db: db = db, MIN: int = 16, MAX: int = 40, overwrite: bool = False
+):
     if not overwrite:
         params = get_params(Params, db)
         MIN_PLAYER_AGE = params.min_player_age
@@ -48,7 +51,11 @@ def is_valid_age(bday: date, db: db = db, MIN: int = 16, MAX: int = 40, overwrit
     else:
         MIN_PLAYER_AGE = MIN
         MAX_PLAYER_AGE = MAX
-    
+
+    # params = get_params(Params, db)
+    # MIN_PLAYER_AGE = params.min_player_age
+    # MAX_PLAYER_AGE = params.max_player_age
+
     now = date.today()
     age = now.year - bday.year - ((now.month, now.day) < (bday.month, bday.day))
     print("age = ", age)
@@ -136,8 +143,8 @@ def auto_count_total_player(db: db_deps, club_id: int):
     db.commit()
     return count 
 
-# def auto_count_goal_types(db: db_deps)
 
+# check input is integer
 def is_int(var: str):
     try:
         var = int(var)
@@ -145,6 +152,7 @@ def is_int(var: str):
     except ValueError:
         return False
 
+#convert 
 def convert_from_attr(model, value, src_field, res_field, from_name : bool = False):
     if from_name:
         records = db.query(model).filter(

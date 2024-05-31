@@ -75,10 +75,10 @@ async def add_match(db:db_deps, current_user: CurrentUser, match : AddMatch):
     return match_return, new_match
 
 
-    # Chuỗi thời gian
-time_string = "01:12 31/05/2024"
+#     # Chuỗi thời gian
+# time_string = "01:12 31/05/2024"
 
-# Chuyển đổi chuỗi thành datetime
-start_time = datetime.strptime(time_string, f"%H:%M %d/%m/%Y")
+# # Chuyển đổi chuỗi thành datetime
+# start_time = datetime.strptime(time_string, f"%H:%M %d/%m/%Y")
 
 
