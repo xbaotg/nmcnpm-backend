@@ -60,7 +60,10 @@ CREATE TABLE IF NOT EXISTS Matches (
     team1 INTEGER, -- Foreign key reference to Club
     team2 INTEGER, -- Foreign key reference to Club
     start TIMESTAMP, -- YYYY:MM:DD HH:MM:SS
-    result VARCHAR(255),
+    finish TIMESTAMP,
+    -- result VARCHAR(255),
+    goal1 INTEGER,
+    goal2 INTEGER,
     ref_id INTEGER, -- Foreign key reference to Referee
     var_id INTEGER, -- Foreign key reference to Referee
     lineman_id INTEGER, -- Foreign key reference to Referee
@@ -78,7 +81,7 @@ CREATE TABLE IF NOT EXISTS Events (
     events VARCHAR(255),
     minute_event TIME,
     player_id INTEGER, -- Foreign key reference to Player
-    PRIMARY KEY (match_id, events, player_id),
+    PRIMARY KEY (match_id, events, minute_event),
     FOREIGN KEY (match_id) REFERENCES Matches(match_id),
     FOREIGN KEY (player_id) REFERENCES Players(player_id),
     show BOOLEAN DEFAULT TRUE

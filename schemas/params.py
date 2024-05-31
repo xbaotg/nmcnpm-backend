@@ -1,7 +1,10 @@
 from pydantic import BaseModel, Field
 from typing import List, Annotated
 from datetime import time, datetime
+from utils import get_params, db
+from schemas.db import Params
 
+params = get_params(Params, db)
 
 class Show_Params(BaseModel):
     # id: int
@@ -24,18 +27,18 @@ class Show_Params(BaseModel):
 
 class Update_Params(BaseModel):
     # id: int
-    min_player_age: int | None
-    max_player_age: int | None
-    min_club_player: int | None
-    max_club_player: int | None
-    max_foreign_player: int | None
+    min_player_age: int = params.min_player_age
+    max_player_age: int = params.max_player_age
+    min_club_player: int = params.min_club_player
+    max_club_player: int = params.max_club_player
+    max_foreign_player: int = params.max_foreign_player
 
-    points_win: int | None
-    points_draw: int | None
-    points_lose: int | None
+    points_win: int = params.points_win
+    points_draw: int = params.points_draw
+    points_lose: int = params.points_lose
 
-    max_goal_types: int | None
-    max_goal_time: time = time(1, 30)
+    max_goal_types: int = params.max_goal_types
+    max_goal_time: time = params.max_goal_time
 
     class Config:
         orm_mode = True

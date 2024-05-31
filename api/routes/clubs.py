@@ -32,6 +32,7 @@ async def get_all_clubs(db: db_deps):
                     status_code=204,
                     detail=f"Can't find manager of club: {club.club_name}",
                 )
+            # count (update) total player of a club
             auto_count_total_player(db, club.club_id)
             club_data = {
                 "club_name": club.club_name,
