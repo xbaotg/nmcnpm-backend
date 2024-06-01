@@ -14,15 +14,76 @@ from utils import valid_add_match, valid_update_match, is_int, convert_from_attr
 route = APIRouter()
 
 
-
-@route.get("/test")
-async def test(db:db_deps, value : str):
-    res = convert_from_attr(Clubs, value, "club_name", "club_shortname", True)
-    return res
-
 @route.get("/get-matches")
 async def get_matches(db: db_deps):
     db_matches = db.query(Matches).filter(Matches.show == True).all()
+    res_list = []
+    for match in db_matches:
+        res = MatchResponse(
+            match_id = match.match_id,
+            team1 = convert_from_attr(Clubs, match.team1, "club_id", "club_name"),
+            team2 = convert_from_attr(Clubs, match.team2, "club_id", "club_name"),
+            start = str(match.start.strftime(f"%H:%M %d/%m/%Y")),
+            goal1 = match.goal1,
+            goal2 = match.goal2,
+            ref = convert_from_attr(Referees, match.ref_id, "ref_id", "ref_name"),
+            var = convert_from_attr(Referees, match.var_id, "ref_id", "ref_name"),
+            lineman = convert_from_attr(Referees, match.lineman_id, "ref_id", "ref_name")
+        )
+        res_list.append(res)
+    return res_list
+
+@route.get("/filter-matches-by-team-name")
+async def get_matches(db:db_deps, club : str):
+    search = convert_from_attr(Clubs, club, "club_name", "club_id", True)
+
+    db_matches = db.query(Matches).filter(
+        Matches.show == True,
+        or_(Matches.team1 == search, Matches.team2 == search)
+    ).all()
+
+    res_list = []
+    for match in db_matches:
+        res = MatchResponse(
+            match_id = match.match_id,
+            team1 = convert_from_attr(Clubs, match.team1, "club_id", "club_name"),
+            team2 = convert_from_attr(Clubs, match.team2, "club_id", "club_name"),
+            start = str(match.start.strftime(f"%H:%M %d/%m/%Y")),
+            goal1 = match.goal1,
+            goal2 = match.goal2,
+            ref = convert_from_attr(Referees, match.ref_id, "ref_id", "ref_name"),
+            var = convert_from_attr(Referees, match.var_id, "ref_id", "ref_name"),
+            lineman = convert_from_attr(Referees, match.lineman_id, "ref_id", "ref_name")
+        )
+        res_list.append(res)
+    return res_list
+
+# get unfinished matches
+@route.get("/fixtures")
+async def get_fixtures(db: db_deps):
+    db_matches = db.query(Matches).filter(Matches.show == True, Matches.goal1 == None).all()
+
+    res_list = []
+    for match in db_matches:
+        res = MatchResponse(
+            match_id = match.match_id,
+            team1 = convert_from_attr(Clubs, match.team1, "club_id", "club_name"),
+            team2 = convert_from_attr(Clubs, match.team2, "club_id", "club_name"),
+            start = str(match.start.strftime(f"%H:%M %d/%m/%Y")),
+            goal1 = match.goal1,
+            goal2 = match.goal2,
+            ref = convert_from_attr(Referees, match.ref_id, "ref_id", "ref_name"),
+            var = convert_from_attr(Referees, match.var_id, "ref_id", "ref_name"),
+            lineman = convert_from_attr(Referees, match.lineman_id, "ref_id", "ref_name")
+        )
+        res_list.append(res)
+    return res_list
+
+# get result = get finished matches
+@route.get("/results")
+async def get_matches_results(db: db_deps):
+    db_matches = db.query(Matches).filter(Matches.show == True, Matches.goal1 != None).all()
+
     res_list = []
     for match in db_matches:
         res = MatchResponse(
