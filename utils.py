@@ -8,7 +8,7 @@ from api.deps import CurrentUser
 
 from schemas.db import Users, Params, Players, Clubs, Referees, Matches
 from schemas.params import Show_Params
-from schemas.matches import AddMatch
+from schemas.matches import AddMatch, MatchUpdate
 
 def is_admin(db: db_deps, current_user: CurrentUser):
     if current_user is None:
@@ -180,6 +180,7 @@ def convert_from_attr(model, value, src_field, res_field, from_name : bool = Fal
         return None
 
 def valid_add_match(db: db_deps, match: AddMatch): # return a basemodel with all values are IDs
+
     # convert team1 , team2 (name to id)
     team1 = None
     team2 = None
@@ -200,11 +201,9 @@ def valid_add_match(db: db_deps, match: AddMatch): # return a basemodel with all
             raise HTTPException(status_code=400, detail = f"Invalid team2")
         
 
-    print(f"check {team1}, {team2}")
     if (not team1 ) or (not team2) or (team1 == team2):
         raise HTTPException(status_code=400, detail="Invalid host team or away team")
-
-
+    
     
     # check start time
         # convert string to datetime
@@ -265,3 +264,50 @@ def valid_add_match(db: db_deps, match: AddMatch): # return a basemodel with all
     return match
 
 
+def valid_update_match(db: db_deps, match: MatchUpdate, id : int):
+    target = db.query(Matches).filter(Matches.match_id == id, Matches.show==True).first()
+    #check valid teams, ref, var, lineman
+    if (match.team1 != "string"):
+        team1 = convert_from_attr(Clubs, match.team1, "club_name", "club_id", True)
+        if not team1:
+            raise HTTPException(status_code=400, detail=f"Invalid host team !")
+    else:
+        team1 = target.team1
+
+    if (match.team2 != "string"):
+        team2 = convert_from_attr(Clubs, match.team2, "club_name", "club_id", True)
+        if not team2:
+            raise HTTPException(status_code=400, detail=f"Invalid away team !")
+    else:
+        team2 = target.team2
+
+    if (match.ref != "string"):
+        ref = convert_from_attr(Referees, match.ref, "ref_name", "ref_id", True)
+        if not ref:
+            raise HTTPException(status_code=400, detail=f"Referee not found !")
+    else:
+        ref = target.ref_id
+
+    if (match.var != "string"):
+        var = convert_from_attr(Referees, match.var, "ref_name", "ref_id", True)
+        if not var:
+            raise HTTPException(status_code=400, detail=f"Var referee not found !")
+    else:
+        var = target.var_id
+
+    if (match.lineman != "string"):
+        lineman = convert_from_attr(Referees, match.lineman, "ref_name", "ref_id", True)
+        if not lineman:
+            raise HTTPException(status_code=400, detail=f"Lineman referee not found !")
+    else:
+        lineman = target.lineman_id
+    #checkt start time
+    if (match.start == "HH:MM dd/mm/YY"):
+        match.start = str(target.start.strftime(f"%H:%M %d/%m/%Y"))
+    match.team1 = team1
+    match.team2 = team2
+    match.ref = ref
+    match.var = var
+    match.lineman = lineman
+
+    return match
