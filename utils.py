@@ -6,7 +6,7 @@ from sqlalchemy import select, exists, or_, func
 from core.db import db_deps, get_params, db
 from api.deps import CurrentUser
 
-from schemas.db import Users, Params, Players, Clubs, Referees, Matches
+from schemas.db import Users, Params, Players, Clubs, Referees, Matches, Events
 from schemas.params import Show_Params
 from schemas.matches import AddMatch, MatchUpdate
 
@@ -311,3 +311,48 @@ def valid_update_match(db: db_deps, match: MatchUpdate, id : int):
     match.lineman = lineman
 
     return match
+
+
+# EVENT
+def check_event_time(db:db_deps, time:datetime):
+    params = get_params(Params, db)
+    if time > params.max_goal_time.strftime(f"%H:%M"):
+        raise HTTPException(status_code=400, detail = f"Max time for an event is {params.max_goal_time.strftime('%H:%M')}")
+    
+    return True
+
+# AUTO COUNT GOALS FOR A MATCH
+def count_goals(db: db_deps, match_id: int):
+    # check valid target
+    events = db.query(Events).filter(
+        Events.match_id == match_id,
+        Events.show == True,
+    ).all()
+    
+    target = db.query(Matches).filter(
+        Matches.show == True,
+        Matches.match_id == match_id
+    ).first()
+    
+    if not target:
+        raise HTTPException(status_code = 400, detail = "Can't find any matches !")
+    
+
+    goal1 = 0
+    goal2 = 0
+    # no events -> return 
+    if len(events) == 0:
+        return goal1, goal2
+
+    # count
+    for event in events:
+        player = db.query(Players).filter(
+            Players.show == True, 
+            Players.player_id == event.player_id
+        ).first()
+        if player.player_club == target.team1:
+            goal1 += 1
+        if player.player_club == target.team2:
+            goal2 += 1
+    
+    return goal1, goal2 
