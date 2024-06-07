@@ -37,11 +37,6 @@ async def login_for_access_token(
         payload = jwt.decode(token, config.SECRET_KEY, algorithms=[config.ALGORITHM])
         expired_date = payload.get("exp")
 
-        # datetime_obj = datetime.fromtimestamp(expired_date)
-
-        # Định dạng datetime thành chuỗi dễ đọc
-        # formatted_date = datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
-
         return {
             "access_token": token,
             "token_type": "bearer",
