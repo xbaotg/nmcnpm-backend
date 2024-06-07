@@ -91,3 +91,15 @@ class Events(Base):
     events = Column(String, primary_key=True, index=True)
     player_id = Column(Integer, ForeignKey("players.player_id"), index=True)
     show = Column(Boolean, index=True)
+
+class GoalTypes(Base):
+    __tablename__ = "goaltypes"
+
+    type_id = Column(Integer, primary_key=True, index=True)
+    type_name = Column(String, index=True)
+    show = Column(Boolean, index=True)
+
+# class Ranking(Base):
+#     __tablename__ = "ranking"
+
+    

@@ -8,5 +8,5 @@ finish = start + timedelta(hours=1, minutes=30)
 print(start)
 print(finish)
 print(finish.time().minute)
-if (start < finish):
+if start < finish:
     print("true")

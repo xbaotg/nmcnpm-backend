@@ -13,7 +13,7 @@ from utils import (
     check_foreign_player,
     check_club_player_num,
     auto_count_total_player,
-    get_params
+    get_params,
 )
 
 route = APIRouter()
@@ -58,7 +58,6 @@ async def update_params(
         params = db.query(Params).first()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-    
 
     # check if there're conflict data
     # check club's player num (debugging)
@@ -69,7 +68,7 @@ async def update_params(
             .filter(Players.show == True, Players.player_club == club.club_id)
             .count()
         )
-        if (count < new_info.min_club_player or count > new_info.max_club_player):
+        if count < new_info.min_club_player or count > new_info.max_club_player:
             print(f"{new_info.min_club_player} : {count} : {new_info.max_club_player}")
             conflict = True
             db.rollback()
@@ -87,7 +86,7 @@ async def update_params(
             )
             .count()
         )
-        if  (count > new_info.max_foreign_player):
+        if count > new_info.max_foreign_player:
             conflict = True
             db.rollback()
             return {

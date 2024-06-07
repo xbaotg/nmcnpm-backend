@@ -1,8 +1,11 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 from typing import Annotated
 
 from core.db import db_deps
 from core.security import create_access_token
+from core.config import config
+from jose import jwt
+
 from crud import authenticate_user
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
@@ -13,7 +16,7 @@ from starlette import status
 router = APIRouter()
 
 
-@router.post("/token", response_model=Token)
+@router.post("/token", response_model=Token | dict)
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_deps
 ):
@@ -29,7 +32,23 @@ async def login_for_access_token(
         token = create_access_token(
             user.user_name, user.user_id, timedelta(minutes=1440)
         )
-        return {"access_token": token, "token_type": "bearer"}
+
+        # get expired date
+        payload = jwt.decode(token, config.SECRET_KEY, algorithms=[config.ALGORITHM])
+        expired_date = payload.get("exp")
+        print(payload)
+        print(expired_date)
+
+        datetime_obj = datetime.fromtimestamp(expired_date)
+
+        # Định dạng datetime thành chuỗi dễ đọc
+        formatted_date = datetime_obj.strftime('%Y-%m-%d %H:%M:%S')
+
+
+        return {"access_token": token, 
+                "token_type": "bearer", 
+                "expired date": formatted_date
+        }
 
     except HTTPException as e:
         raise e
