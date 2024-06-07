@@ -1,10 +1,11 @@
+from datetime import datetime
 from fastapi import HTTPException
 from sqlalchemy import func
 from core.db import db, db_deps
 from schemas.db import Users, Clubs, Players
 from core.security import verify_password, get_password_hash
 from api.deps import CurrentUser, Annotated, List
-from schemas.users import UserCreateBase
+from schemas.users import UserCreateBase, UserReg
 from schemas.clubs import Club_Create
 from utils import is_valid_age, check_club_player_num, check_foreign_player
 
@@ -73,12 +74,26 @@ def create_user(db: db_deps, new_user: UserCreateBase) -> Users | dict:
 
 def get_info_user(db: db_deps, current_user: CurrentUser):
     try:
-        user = db.query(Users).filter(Users.user_name == current_user["user_name"])
+        user = db.query(Users).filter(Users.user_name == current_user["user_name"]).first()
 
         if user is None:
             raise HTTPException(status_code=204, detail="Can't find user !")
+        
+        bday = datetime.combine(user.user_bday, datetime.min.time())
+        print(bday)
+        print(int(bday.timestamp()))
+        res = UserReg(
+            user_id = user.user_id,
+            full_name = user.full_name, 
+            role = user.role, 
+            user_name = user.user_name,
+            user_mail = user.user_mail,
+            user_nation = user.user_nation, 
+            user_bday = int(bday.timestamp()),
+            show = user.show 
 
-        return user.first()
+        )
+        return res
 
     except HTTPException as e:
         raise
