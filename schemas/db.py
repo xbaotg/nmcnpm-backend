@@ -98,3 +98,8 @@ class GoalTypes(Base):
     type_id = Column(Integer, primary_key=True, index=True)
     type_name = Column(String, index=True)
     show = Column(Boolean, index=True)
+
+# class Ranking(Base):
+#     __tablename__ = "ranking"
+
+    
