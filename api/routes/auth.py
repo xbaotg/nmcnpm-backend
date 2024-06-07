@@ -36,18 +36,16 @@ async def login_for_access_token(
         # get expired date
         payload = jwt.decode(token, config.SECRET_KEY, algorithms=[config.ALGORITHM])
         expired_date = payload.get("exp")
-        print(payload)
-        print(expired_date)
 
-        datetime_obj = datetime.fromtimestamp(expired_date)
+        # datetime_obj = datetime.fromtimestamp(expired_date)
 
         # Định dạng datetime thành chuỗi dễ đọc
-        formatted_date = datetime_obj.strftime('%Y-%m-%d %H:%M:%S')
+        # formatted_date = datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
 
-
-        return {"access_token": token, 
-                "token_type": "bearer", 
-                "expired date": formatted_date
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "expired_date": expired_date,
         }
 
     except HTTPException as e:
