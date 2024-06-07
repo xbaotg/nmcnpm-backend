@@ -24,9 +24,11 @@ async def get_all_clubs(db: db_deps):
 
         # get manager's full name from manager's id
         for club in db_clubs:
-            manager_full_name = (
-                db.query(Users).filter(Users.user_id == club.manager).first().full_name
-            )
+            manager = db.query(Users).filter(Users.user_id == club.manager).first()
+
+            manager_full_name = manager.full_name
+            manager_id = manager.user_id
+
             if not manager_full_name:
                 raise HTTPException(
                     status_code=204,
@@ -38,7 +40,8 @@ async def get_all_clubs(db: db_deps):
                 "club_name": club.club_name,
                 "club_shortname": club.club_shortname,
                 "total_player": club.total_player,
-                "manager": manager_full_name,
+                "manager_name": manager_full_name,
+                "manager_id": manager_id,
             }
             result.append(club_data)
 

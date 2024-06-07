@@ -6,6 +6,7 @@ from schemas.db import Params
 
 params = get_params(Params, db)
 
+
 class Show_Params(BaseModel):
     # id: int
     min_player_age: int

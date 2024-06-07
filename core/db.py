@@ -9,7 +9,7 @@ from fastapi import Depends
 
 class Database:
     def __init__(self, db_url: str):
-        self.engine = create_engine(db_url)
+        self.engine = create_engine(db_url, pool_size=20)
         self.SessionLocal = sessionmaker(
             autocommit=False, autoflush=False, bind=self.engine
         )
@@ -61,5 +61,3 @@ def get_params(model, db: Session):
     #     db.close()
     except Exception as e:
         return {"message": f"Error: {str(e)}"}
-
-

@@ -1,4 +1,13 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Date, Time, DateTime
+from sqlalchemy import (
+    Boolean,
+    Column,
+    ForeignKey,
+    Integer,
+    String,
+    Date,
+    Time,
+    DateTime,
+)
 from core.db import Base
 
 
@@ -82,11 +91,14 @@ class Matches(Base):
     var_id = Column(Integer, ForeignKey("referees.ref_id"), index=True)
     lineman_id = Column(Integer, ForeignKey("referees.ref_id"), index=True)
     show = Column(Boolean, index=True)
-     
+
+
 class Events(Base):
     __tablename__ = "events"
 
-    match_id = Column(Integer, ForeignKey("matches.match_id"), primary_key=True, index=True)
+    match_id = Column(
+        Integer, ForeignKey("matches.match_id"), primary_key=True, index=True
+    )
     minute_event = Column(Time, primary_key=True, index=True)
     events = Column(String, primary_key=True, index=True)
     player_id = Column(Integer, ForeignKey("players.player_id"), index=True)

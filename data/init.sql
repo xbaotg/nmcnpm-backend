@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS Clubs (
     nation VARCHAR(255),
     manager INTEGER, -- Foreign key reference to Users
     show BOOLEAN DEFAULT TRUE,
+    logo_low VARCHAR(255),
+    logo_high VARCHAR(255),
     FOREIGN KEY (manager) REFERENCES Users(user_id)
 );
 
