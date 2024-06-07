@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     API_PREFIX_REFEREES: str
     API_PREFIX_CLUBS: str
     API_PREFIX_MATCHES: str
+    API_PREFIX_EVENTS: str
 
 
 config = Settings()  # type: ignore
