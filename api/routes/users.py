@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from core.db import db_deps, db, get_params
 from crud import create_user, get_info_user
@@ -12,12 +12,19 @@ from api.deps import List, CurrentUser, get_password_hash, fuzz
 
 route = APIRouter()
 
-
-@route.get("/test")
-async def hehe():
-    params = get_params(Params, db)
-    return {"message": f"hehehehe: {(params.min_club_player)}"}
-    return params
+def create_user_res(user):
+    bday = datetime.combine(user.user_bday, datetime.min.time())
+    res = UserReg(
+        user_id = user.user_id,
+        full_name = user.full_name, 
+        role = user.role, 
+        user_name = user.user_name,
+        user_mail = user.user_mail,
+        user_nation = user.user_nation, 
+        user_bday = int(bday.timestamp()),
+        show = user.show 
+    )
+    return res
 
 
 def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
@@ -50,13 +57,6 @@ def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
     return True
 
 
-@route.get("/get-message")
-async def get_message(db: db_deps, current_user: CurrentUser):
-
-    hasPermission = get_user_permission(db, current_user, "admin")
-
-    return {"message": "Hello my friends."}
-
 
 @route.post("/create-user")
 async def create_user_route(
@@ -65,7 +65,8 @@ async def create_user_route(
     hasPermission = get_user_permission(db, current_user, "admin")
     # check valid username in crud.create_user
 
-    return create_user(db, new_user)
+    
+    return create_user_res(create_user(db, new_user))
 
 
 # GET ALL USERS
@@ -77,7 +78,11 @@ async def get_all_users(current_user: CurrentUser, db: db_deps):
         hasPermission = get_user_permission(db, current_user, "admin")
         db_users = db.query(Users).all()
 
-        return db_users
+        res = []
+        for user in db_users:
+            res.append(create_user_res(user))
+
+        return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
@@ -86,7 +91,8 @@ async def get_all_users(current_user: CurrentUser, db: db_deps):
 async def get_user_info(current_user: CurrentUser, db: db_deps):
     try:
         res = get_info_user(db, current_user)
-        return UserReg(**res.__dict__)
+        return res
+        # return UserReg(**res.__dict__)
     except Exception as e:
         raise e
 
@@ -96,11 +102,14 @@ async def get_user_info(current_user: CurrentUser, db: db_deps):
 async def get_all_users(current_user: CurrentUser, db: db_deps):
     hasPermission = get_user_permission(db, current_user, "admin")
 
-    db_user = db.query(Users).filter(Users.show == True).all()
-    if db_user == 0:
-        raise HTTPException(status_code=404, detail="Cant find users")
+    db_users = db.query(Users).filter(Users.show == True).all()
+    if db_users == None:
+        raise HTTPException(status_code=204, detail="Cant find users")
+    res = []
+    for user in db_users:
+        res.append(create_user_res(user))
 
-    return db_user
+    return res
 
 
 # GET deleted users
@@ -110,11 +119,15 @@ async def get_all_users(current_user: CurrentUser, db: db_deps):
 async def get_all_users(current_user: CurrentUser, db: db_deps):
     hasPermission = get_user_permission(db, current_user, "admin")
 
-    db_user = db.query(Users).filter(Users.show == False).all()
-    if db_user == 0:
-        raise HTTPException(status_code=404, detail="Cant find users")
+    db_users = db.query(Users).filter(Users.show == False).all()
+    if db_users == None:
+        raise HTTPException(status_code=204, detail="Cant find users")
+    res = []
+    for user in db_users:
+        res.append(create_user_res(user))
 
-    return db_user
+    return res
+
 
 
 # GET user by name
@@ -200,7 +213,7 @@ async def update_user_info(
         db.commit()
         db.refresh(target)
 
-        return target
+        return create_user_res(target)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}!")
 
@@ -223,7 +236,11 @@ async def search_user_by_name(
         )
         if not matched_users:
             return {"message": f"Can't find any users match the name: {full_name}"}
-        return matched_users
+        
+        res=[]
+        for user in matched_users:
+            res.append(create_user_res(user))
+        return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
@@ -242,6 +259,9 @@ async def search_user_by_name(
         )
         if not matched_users:
             return {"message": f"Can't find any users match the nation: {nation}"}
-        return matched_users
+        res=[]
+        for user in matched_users:
+            res.append(create_user_res(user))
+        return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")

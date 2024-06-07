@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from fuzzywuzzy import fuzz
@@ -13,6 +13,20 @@ from utils import is_valid_age
 
 route = APIRouter()
 
+def create_player_res(player):
+    bday = None
+    if player.player_bday is not None:
+        bday = int(datetime.combine(player.player_bday, datetime.min.time()).timestamp())
+    else: 
+        bday = player.player_bday
+    return PlayerShow(
+        player_name  = player.player_name,
+        player_bday = bday,
+        player_club = player.player_club,
+        player_pos = player.player_pos,
+        player_nation = player.player_nation,
+        js_number = player.js_number
+    )
 
 def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
     if current_user is None:
@@ -80,7 +94,7 @@ async def add_players(
         db.add(new_db_player)
         db.commit()
         db.refresh(new_db_player)
-        return new_db_player
+        return create_player_res(new_db_player)
 
     except HTTPException as e:
         db.rollback()
@@ -102,10 +116,14 @@ async def get_players_by_name(full_name: str, db: db_deps, threshold: int = 80):
             >= threshold
         ]
 
-        if not matched_players:
+        if matched_players is None:
             raise HTTPException(status_code=204, detail="Cannot find players")
+        
+        res=[]
+        for player in matched_players:
+            res.append(create_player_res(player))
 
-        return matched_players
+        return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
@@ -134,7 +152,11 @@ async def get_players_by_club(club_name: str, db: db_deps, threshold: int = 80):
             raise HTTPException(status_code=204, detail="Cannot find players")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-    return matched_players
+
+    res =[]
+    for player in matched_players:
+        res.append(create_player_res(player))
+    return res
 
 
 @route.get("/get_players_by_pos", response_model=List[PlayerShow])
@@ -151,7 +173,10 @@ async def get_players_by_pos(position: str, db: db_deps, threshold: int = 80):
             raise HTTPException(status_code=204, detail="Cannot find players")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-    return matched_players
+    res =[]
+    for player in matched_players:
+        res.append(create_player_res(player))
+    return res
 
 
 @route.get("/get_players_by_nation", response_model=List[PlayerShow])
@@ -168,7 +193,10 @@ async def get_players_by_nation(nation: str, db: db_deps, threshold: int = 80):
             raise HTTPException(status_code=204, detail="Cannot find players")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-    return matched_players
+    res =[]
+    for player in matched_players:
+        res.append(create_player_res(player))
+    return res
 
 
 @route.put("/update_player")
@@ -190,7 +218,7 @@ async def update_player(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}!")
-    return target
+    return create_player_res(target)
 
 
 @route.put("/delete_player")
