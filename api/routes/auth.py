@@ -39,7 +39,7 @@ async def login_for_access_token(
 
         return {"access_token": token, 
                 "token_type": "bearer", 
-                "expired date": expired_date
+                "expired_date": expired_date
         }
 
     except HTTPException as e:
