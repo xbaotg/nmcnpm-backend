@@ -45,12 +45,13 @@ print("Connecting to database...")
 print(f"POSTGRES_SERVER: {config.POSTGRES_SERVER}")
 print(f"POSTGRES_PORT: {config.POSTGRES_PORT}")
 print(f"POSTGRES_DB: {config.POSTGRES_DB}")
-print()
 
 db_url = f"postgresql://{config.POSTGRES_USER}:{config.POSTGRES_PASSWORD}@{config.POSTGRES_SERVER}:{config.POSTGRES_PORT}/{config.POSTGRES_DB}"
 db = Database(db_url)
 Base = db.get_base()
 db_deps = Annotated[Session, Depends(db.get_db)]
+
+print("Connected to database !")
 
 
 def get_params(model, db: Session):
