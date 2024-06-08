@@ -84,16 +84,64 @@ async def search_club_by_name(db: db_deps, search_name: str, threshold: int = 80
             raise HTTPException(
                 status_code=204, detail=f"Can't find manager of club: {club.club_name}"
             )
-        club_data = {
-            "club_name": club.club_name,
-            "club_shortname": club.club_shortname,
-            "total_player": club.total_player,
-            "manager": manager_full_name,
-        }
+        club_data = Club_Response(
+            club_id=club.club_id,
+            club_name=club.club_name,
+            club_shortname=club.club_shortname,
+            total_player=club.total_player,
+            manager_id=club.manager,
+            manager_name=manager_full_name,
+        )
         result.append(club_data)
 
     if len(result) == 0:
         return {"message": f"No clubs match the name: {search_name}"}
+
+    return result
+
+
+@route.get("/search-club-by-manager-id", response_model=List[Club_Response] | dict)
+async def search_club_by_manager_id(db: db_deps, manager_search_id: int):
+
+    target = (
+        db.query(Users)
+        .filter(
+            Users.show == True,
+            Users.user_id == manager_search_id,
+            Users.role == "manager",
+        )
+        .first()
+    )
+    if target is None:
+        raise HTTPException(status_code=204, detail="Can't find manager")
+
+    manager_full_name = (
+        db.query(Users).filter(Users.user_id == manager_search_id).first().full_name
+    )
+
+    db_clubs = (
+        db.query(Clubs)
+        .filter(Clubs.show == True, Clubs.manager == manager_search_id)
+        .all()
+    )
+    if not db_clubs:
+        raise HTTPException(
+            status_code=204, detail="This manager doesn't have any clubs"
+        )
+
+    result = []
+    # get manager's full name from manager's id
+    for club in db_clubs:
+
+        club_data = Club_Response(
+            club_id=club.club_id,
+            club_name=club.club_name,
+            club_shortname=club.club_shortname,
+            total_player=club.total_player,
+            manager_id=club.manager,
+            manager_name=manager_full_name,
+        )
+        result.append(club_data)
 
     return result
 

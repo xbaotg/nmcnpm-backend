@@ -19,7 +19,7 @@ def get_application() -> FastAPI:
         allow_headers=["*"],
     )
 
-    app.add_middleware(RouterLoggingMiddleware, logger=logger)
+    # app.add_middleware(RouterLoggingMiddleware, logger=logger)
 
     # register routers
     app.include_router(router)

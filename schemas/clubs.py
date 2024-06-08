@@ -6,13 +6,19 @@ from schemas.players import Player_Add_With_Club
 
 
 class Club_Response(BaseModel):
+    club_id: int
     club_name: str
     club_shortname: str
     total_player: int
+<<<<<<< HEAD
     manager_id: int
     manager_name: str
     logo_high: str | None
     logo_low: str | None
+=======
+    manager_id: int  # convert id to name
+    manager_name: str  # convert id to name
+>>>>>>> 33bf074d2214f90f63b45b020cacf5963ad0c650
 
     # show: bool
     # club_id: int
