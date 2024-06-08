@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Annotated
 from datetime import time, datetime
 from utils import get_params, db
-from schemas.db import Params
+from schemas.db import Params, GoalTypes
 
 params = get_params(Params, db)
 
@@ -20,7 +20,7 @@ class Show_Params(BaseModel):
     points_lose: int
 
     max_goal_types: int
-    max_goal_time: time
+    max_goal_time: int
 
     class Config:
         orm_mode = True
@@ -38,8 +38,16 @@ class Update_Params(BaseModel):
     points_draw: int = params.points_draw
     points_lose: int = params.points_lose
 
-    max_goal_types: int = params.max_goal_types
-    max_goal_time: time = params.max_goal_time
+    # max_goal_types: int = params.max_goal_types -> config in another endpoint
+    max_goal_time: int = params.max_goal_time
 
     class Config:
         orm_mode = True
+    
+
+
+class GoalTypeAdd(BaseModel):
+    type_id: int
+    type_name: str
+    show: bool
+    

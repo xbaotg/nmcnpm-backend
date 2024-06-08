@@ -25,7 +25,7 @@ from core.db import Base
 #     show = Column(Boolean, index=True)
 
 class Users(Base):
-    __tablename__ = "users_new"
+    __tablename__ = "users"
 
     user_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     full_name = Column(String, index=True)
@@ -77,7 +77,7 @@ class Params(Base):
     points_lose = Column(Integer, index=True)
 
     max_goal_types = Column(Integer, index=True)
-    max_goal_time = Column(Time, index=True)
+    max_goal_time = Column(Integer, index=True)
 
 
 class Referees(Base):
@@ -112,7 +112,7 @@ class Events(Base):
     match_id = Column(
         Integer, ForeignKey("matches.match_id"), primary_key=True, index=True
     )
-    minute_event = Column(Time, primary_key=True, index=True)
+    seconds = Column(Integer, primary_key=True, index=True)
     events = Column(String, primary_key=True, index=True)
     player_id = Column(Integer, ForeignKey("players.player_id"), index=True)
     show = Column(Boolean, index=True)

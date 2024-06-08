@@ -26,6 +26,9 @@ def unix_to_date(unix):
 def date_to_unix(date_value):
     return int(datetime.combine(date_value, datetime.min.time()).timestamp())
 
+# event_time -> seconds
+def to_second(datetime):
+    return datetime.hour*3600 + datetime.minute*60 + datetime.second
 
 def is_admin(db: db_deps, current_user: CurrentUser):
     if current_user is None:
@@ -59,7 +62,7 @@ MAX_GOAL_TIME = "01:30:00"
 
 # overwrite to use when update params, checking conflict data with new MIN/MAX age
 def is_valid_age(
-    bday: date, db: db = db, MIN: int = 16, MAX: int = 40, overwrite: bool = False
+    bday: int, db: db = db, MIN: int = 16, MAX: int = 40, overwrite: bool = False
 ):
     if not overwrite:
         params = get_params(Params, db)
@@ -73,6 +76,8 @@ def is_valid_age(
     # MIN_PLAYER_AGE = params.min_player_age
     # MAX_PLAYER_AGE = params.max_player_age
 
+    # player_bday unix -> datetime
+    bday = datetime.fromtimestamp(bday)
     now = date.today()
     age = now.year - bday.year - ((now.month, now.day) < (bday.month, bday.day))
     # print("age = ", age)
@@ -81,6 +86,12 @@ def is_valid_age(
         return False
 
     return True
+
+def count_age(bday:int):
+    bday = datetime.fromtimestamp(bday)
+    now = date.today()
+    age = now.year - bday.year - ((now.month, now.day) < (bday.month, bday.day))
+    return age
 
 def get_user_role(db: db_deps, current_user: CurrentUser):
     if current_user is None:
@@ -331,9 +342,9 @@ def valid_update_match(db: db_deps, match: MatchUpdate, id : int):
 
 
 # EVENT
-def check_event_time(db:db_deps, time:datetime):
+def check_event_time(db:db_deps, time:int):
     params = get_params(Params, db)
-    if time > params.max_goal_time.strftime(f"%H:%M"):
+    if time > params.max_goal_time:
         raise HTTPException(status_code=400, detail = f"Max time for an event is {params.max_goal_time.strftime('%H:%M')}")
     
     return True
