@@ -25,9 +25,9 @@ class MatchResponse(BaseModel):
     finish: int | None
     goal1: Optional[int] = None
     goal2: Optional[int] = None
-    ref: str
-    var: str
-    lineman: str
+    ref: int
+    var: int
+    lineman: int
 
 
 class MatchUpdate(BaseModel):
@@ -36,6 +36,6 @@ class MatchUpdate(BaseModel):
     start: str = "HH:MM dd/mm/YY"
     goal1: int = -1
     goal2: int = -1
-    ref: str
-    var: str
-    lineman: str
+    ref: int
+    var: int
+    lineman: int

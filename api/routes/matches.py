@@ -34,25 +34,23 @@ async def get_matches(db: db_deps):
 
         logger.info(f"now_unix: {now_unix} - match.start: {match.start}")
 
-        if now_unix > match.start:
-            goal1, goal2 = count_goals(db, match.match_id)
-        else:
-            goal1 = match.goal1
-            goal2 = match.goal2
+        # if now_unix > match.start:
+        #     goal1, goal2 = count_goals(db, match.match_id)
+        # else:
+        # goal1 = match.goal1
+        # goal2 = match.goal2
 
         res = MatchResponse(
             match_id=match.match_id,
-            # team1=convert_from_attr(Clubs, match.team1, "club_id", "club_name"),
-            # team2=convert_from_attr(Clubs, match.team2, "club_id", "club_name"),
             team1=match.team1,
             team2=match.team2,
             start=match.start,
             finish=match.finish,
-            goal1=goal1,
-            goal2=goal2,
-            ref=convert_from_attr(Referees, match.ref_id, "ref_id", "ref_name"),
-            var=convert_from_attr(Referees, match.var_id, "ref_id", "ref_name"),
-            lineman=convert_from_attr(Referees, match.lineman_id, "ref_id", "ref_name"),
+            goal1=match.goal1,
+            goal2=match.goal2,
+            ref=match.ref_id,
+            var=match.var_id,
+            lineman=match.lineman_id,
         )
 
         res_list.append(res)

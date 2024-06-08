@@ -384,6 +384,7 @@ def valid_update_match(db: db_deps, match: MatchUpdate, id: int):
     # checkt start time
     if match.start == "HH:MM dd/mm/YY":
         match.start = str(target.start.strftime(f"%H:%M %d/%m/%Y"))
+
     match.team1 = team1
     match.team2 = team2
     match.ref = ref
