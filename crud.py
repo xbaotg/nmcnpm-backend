@@ -74,24 +74,23 @@ def create_user(db: db_deps, new_user: UserCreateBase) -> Users | dict:
 
 def get_info_user(db: db_deps, current_user: CurrentUser):
     try:
-        user = db.query(Users).filter(Users.user_name == current_user["user_name"]).first()
+        user = (
+            db.query(Users).filter(Users.user_name == current_user["user_name"]).first()
+        )
 
         if user is None:
             raise HTTPException(status_code=204, detail="Can't find user !")
-        
-        bday = datetime.combine(user.user_bday, datetime.min.time())
-        print(bday)
-        print(int(bday.timestamp()))
-        res = UserReg(
-            user_id = user.user_id,
-            full_name = user.full_name, 
-            role = user.role, 
-            user_name = user.user_name,
-            user_mail = user.user_mail,
-            user_nation = user.user_nation, 
-            user_bday = int(bday.timestamp()),
-            show = user.show 
 
+        # bday = datetime.combine(user.user_bday, datetime.min.time())
+        res = UserReg(
+            user_id=user.user_id,
+            full_name=user.full_name,
+            role=user.role,
+            user_name=user.user_name,
+            user_mail=user.user_mail,
+            user_nation=user.user_nation,
+            user_bday=user.user_bday,
+            show=user.show,
         )
         return res
 

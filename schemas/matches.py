@@ -6,7 +6,7 @@ from datetime import date, time, datetime, timedelta
 class AddMatch(BaseModel):
     team1: str | int
     team2: str | int
-    start: str = str(datetime.now().strftime(f"%H:%M %d/%m/%Y"))
+    start: int = datetime.now().timestamp()
     # finish:
     # goal1: int -> new match -> goal = None
     # goal2: int
@@ -19,9 +19,10 @@ class AddMatch(BaseModel):
 class MatchResponse(BaseModel):
     # turn id(int) into name(str)
     match_id: int
-    team1: str
-    team2: str
-    start: str
+    team1: int
+    team2: int
+    start: int
+    finish: int | None
     goal1: Optional[int] = None
     goal2: Optional[int] = None
     ref: str

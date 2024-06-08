@@ -42,6 +42,7 @@ async def get_all_clubs(db: db_deps):
             auto_count_total_player(db, club.club_id)
 
             club_data = {
+                "club_id": club.club_id,
                 "club_name": club.club_name,
                 "club_shortname": club.club_shortname,
                 "total_player": club.total_player,

@@ -9,6 +9,8 @@ from core.db import db_deps, Depends
 from schemas.db import Clubs, Players, Users, Params, Matches, Referees
 from schemas.matches import AddMatch, MatchResponse, MatchUpdate
 
+from loguru import logger
+
 from utils import (
     valid_add_match,
     valid_update_match,
@@ -25,25 +27,36 @@ route = APIRouter()
 async def get_matches(db: db_deps):
     db_matches = db.query(Matches).filter(Matches.show == True).all()
     res_list = []
+
     for match in db_matches:
         now = datetime.now()
-        if now > match.start:
+        now_unix = now.timestamp()
+
+        logger.info(f"now_unix: {now_unix} - match.start: {match.start}")
+
+        if now_unix > match.start:
             goal1, goal2 = count_goals(db, match.match_id)
         else:
             goal1 = match.goal1
             goal2 = match.goal2
+
         res = MatchResponse(
             match_id=match.match_id,
-            team1=convert_from_attr(Clubs, match.team1, "club_id", "club_name"),
-            team2=convert_from_attr(Clubs, match.team2, "club_id", "club_name"),
-            start=str(match.start.strftime(f"%H:%M %d/%m/%Y")),
+            # team1=convert_from_attr(Clubs, match.team1, "club_id", "club_name"),
+            # team2=convert_from_attr(Clubs, match.team2, "club_id", "club_name"),
+            team1=match.team1,
+            team2=match.team2,
+            start=match.start,
+            finish=match.finish,
             goal1=goal1,
             goal2=goal2,
             ref=convert_from_attr(Referees, match.ref_id, "ref_id", "ref_name"),
             var=convert_from_attr(Referees, match.var_id, "ref_id", "ref_name"),
             lineman=convert_from_attr(Referees, match.lineman_id, "ref_id", "ref_name"),
         )
+
         res_list.append(res)
+
     return res_list
 
 
