@@ -33,6 +33,8 @@ class Clubs(Base):
     club_shortname = Column(String, index=True)
     total_player = Column(Integer, index=True)
     manager = Column(Integer, ForeignKey("users.user_id"), index=True)
+    logo_high = Column(String, index=True, nullable=True)
+    logo_low = Column(String, index=True, nullable=True)
     show = Column(Boolean, index=True)
 
 
@@ -104,6 +106,7 @@ class Events(Base):
     player_id = Column(Integer, ForeignKey("players.player_id"), index=True)
     show = Column(Boolean, index=True)
 
+
 class GoalTypes(Base):
     __tablename__ = "goaltypes"
 
@@ -111,7 +114,6 @@ class GoalTypes(Base):
     type_name = Column(String, index=True)
     show = Column(Boolean, index=True)
 
+
 # class Ranking(Base):
 #     __tablename__ = "ranking"
-
-    

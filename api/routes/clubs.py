@@ -11,6 +11,8 @@ from crud import create_club as crud_create_club
 from api.deps import List, CurrentUser, get_password_hash, fuzz
 from utils import check_owner, check_is_manager, get_user_role, auto_count_total_player
 
+from loguru import logger
+
 route = APIRouter()
 
 
@@ -18,14 +20,15 @@ route = APIRouter()
 async def get_all_clubs(db: db_deps):
     try:
         db_clubs = db.query(Clubs).filter(Clubs.show == True).all()
+
         if not db_clubs:
             raise HTTPException(status_code=204, detail="Can't find players of club")
+
         result = []
 
         # get manager's full name from manager's id
         for club in db_clubs:
             manager = db.query(Users).filter(Users.user_id == club.manager).first()
-
             manager_full_name = manager.full_name
             manager_id = manager.user_id
 
@@ -34,26 +37,36 @@ async def get_all_clubs(db: db_deps):
                     status_code=204,
                     detail=f"Can't find manager of club: {club.club_name}",
                 )
+
             # count (update) total player of a club
             auto_count_total_player(db, club.club_id)
+
             club_data = {
                 "club_name": club.club_name,
                 "club_shortname": club.club_shortname,
                 "total_player": club.total_player,
                 "manager_name": manager_full_name,
                 "manager_id": manager_id,
+                "logo_high": club.logo_high,
+                "logo_low": club.logo_low,
             }
+
             result.append(club_data)
 
         return result
 
+    except HTTPException as http_exc:
+        raise http_exc
+
     except Exception as e:
+        logger.error(f"Server Error: {str(e)}")
         raise HTTPException(status_code=501, detail=f"Server Error: {str(e)}")
 
 
 @route.get("/search-club-by-name", response_model=List[Club_Response] | dict)
 async def search_club_by_name(db: db_deps, search_name: str, threshold: int = 80):
     db_clubs = db.query(Clubs).filter(Clubs.show == True).all()
+
     if not db_clubs:
         raise HTTPException(status_code=204, detail="Can't find any clubs")
 

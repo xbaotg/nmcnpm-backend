@@ -115,7 +115,13 @@ class RouterLoggingMiddleware(BaseHTTPMiddleware):
         response = await self._execute_request(call_next, request, request_id)
         finish_time = time.perf_counter()
 
-        overall_status = "successful" if response.status_code < 400 else "failed"
+        if response is None:
+            overall_status = "failed"
+        elif response.status_code < 400:
+            overall_status = "successful"
+        else:
+            overall_status = "failed"
+
         execution_time = finish_time - start_time
 
         response_logging = {

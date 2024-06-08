@@ -9,7 +9,10 @@ class Club_Response(BaseModel):
     club_name: str
     club_shortname: str
     total_player: int
-    manager: str  # convert id to name
+    manager_id: int
+    manager_name: str
+    logo_high: str | None
+    logo_low: str | None
 
     # show: bool
     # club_id: int
