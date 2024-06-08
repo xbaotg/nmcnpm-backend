@@ -8,12 +8,13 @@ from schemas.users import UserCreateBase, UserReg, UserUpdate
 from sqlalchemy import func
 
 from api.deps import List, CurrentUser, get_password_hash, fuzz
+from utils import unix_to_date, date_to_unix
 
 
 route = APIRouter()
 
 def create_user_res(user):
-    bday = datetime.combine(user.user_bday, datetime.min.time())
+    # bday = datetime.combine(user.user_bday, datetime.min.time())
     res = UserReg(
         user_id = user.user_id,
         full_name = user.full_name, 
@@ -21,7 +22,8 @@ def create_user_res(user):
         user_name = user.user_name,
         user_mail = user.user_mail,
         user_nation = user.user_nation, 
-        user_bday = int(bday.timestamp()),
+        # user_bday = int(bday.timestamp()),
+        user_bday = user.user_bday,
         show = user.show 
     )
     return res
@@ -66,7 +68,7 @@ async def create_user_route(
     # check valid username in crud.create_user
 
     
-    return create_user_res(create_user(db, new_user))
+    return (create_user(db, new_user))
 
 
 # GET ALL USERS
@@ -191,7 +193,7 @@ async def permanently_delete_user(user_id: int, db: db_deps, current_user: Curre
 
 
 # Update users
-@route.put("/update-user-info/{user_id}", response_model=UserUpdate)
+@route.put("/update-user-info/{user_id}", response_model=UserUpdate | dict)
 async def update_user_info(
     user_id: int, new_info: UserUpdate, current_user: CurrentUser, db: db_deps
 ):
@@ -204,8 +206,11 @@ async def update_user_info(
         for key, value in update_info.items():  #
             if value == "string":
                 continue
-            if value == date.today():
-                continue
+            if key == "user_bday":
+                if value == date.today():
+                    continue
+                else:
+                    value = date_to_unix(value)
             if key == "password":
                 value = get_password_hash(value)
             setattr(target, key, value)
@@ -213,7 +218,16 @@ async def update_user_info(
         db.commit()
         db.refresh(target)
 
-        return create_user_res(target)
+        return UserUpdate(
+            full_name = target.full_name,
+            role = target.role,
+            user_name =  target.user_name,
+            password = new_info.password,
+            user_nation = target.user_nation,
+            user_bday = unix_to_date(target.user_bday),
+            user_mail = target.user_mail
+        )
+        return {"message": "Update successfully!"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}!")
 

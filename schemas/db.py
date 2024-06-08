@@ -11,8 +11,21 @@ from sqlalchemy import (
 from core.db import Base
 
 
+# class Users(Base):
+#     __tablename__ = "users"
+
+#     user_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+#     full_name = Column(String, index=True)
+#     role = Column(String, index=True)
+#     user_name = Column(String, index=True)
+#     password = Column(String, index=True)
+#     user_nation = Column(String, index=True)
+#     user_bday = Column(Date, index=True)
+#     user_mail = Column(String, index=True)
+#     show = Column(Boolean, index=True)
+
 class Users(Base):
-    __tablename__ = "users"
+    __tablename__ = "users_new"
 
     user_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     full_name = Column(String, index=True)
@@ -20,7 +33,7 @@ class Users(Base):
     user_name = Column(String, index=True)
     password = Column(String, index=True)
     user_nation = Column(String, index=True)
-    user_bday = Column(Date, index=True)
+    user_bday = Column(Integer, index=True)
     user_mail = Column(String, index=True)
     show = Column(Boolean, index=True)
 
@@ -32,7 +45,7 @@ class Clubs(Base):
     club_name = Column(String, index=True)
     club_shortname = Column(String, index=True)
     total_player = Column(Integer, index=True)
-    manager = Column(Integer, ForeignKey("users.user_id"), index=True)
+    manager = Column(Integer, ForeignKey("users_new.user_id"), index=True)
     show = Column(Boolean, index=True)
 
 

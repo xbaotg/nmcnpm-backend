@@ -10,6 +10,23 @@ from schemas.db import Users, Params, Players, Clubs, Referees, Matches, Events
 from schemas.params import Show_Params
 from schemas.matches import AddMatch, MatchUpdate
 
+# Unix time -> datetime
+def unix_to_datetime(unix):
+    return datetime.fromtimestamp(unix)
+
+# datetime -> Unix time
+def datetime_to_unix(time):
+    return int(time.timestamp())
+
+# Unix -> date
+def unix_to_date(unix):
+    return datetime.fromtimestamp(unix).date()
+
+# date -> Unix 
+def date_to_unix(date_value):
+    return int(datetime.combine(date_value, datetime.min.time()).timestamp())
+
+
 def is_admin(db: db_deps, current_user: CurrentUser):
     if current_user is None:
         raise HTTPException(status_code=401, detail="Authentication Failed")
@@ -58,8 +75,8 @@ def is_valid_age(
 
     now = date.today()
     age = now.year - bday.year - ((now.month, now.day) < (bday.month, bday.day))
-    print("age = ", age)
-    print("min age: ", MIN_PLAYER_AGE)
+    # print("age = ", age)
+    # print("min age: ", MIN_PLAYER_AGE)
     if age < MIN_PLAYER_AGE or age > MAX_PLAYER_AGE:
         return False
 

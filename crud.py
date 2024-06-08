@@ -7,7 +7,7 @@ from core.security import verify_password, get_password_hash
 from api.deps import CurrentUser, Annotated, List
 from schemas.users import UserCreateBase, UserReg
 from schemas.clubs import Club_Create
-from utils import is_valid_age, check_club_player_num, check_foreign_player
+from utils import is_valid_age, check_club_player_num, check_foreign_player, date_to_unix
 
 from schemas.players import Player_Add_With_Club
 
@@ -57,6 +57,7 @@ def create_user(db: db_deps, new_user: UserCreateBase) -> Users | dict:
             status_code=401, detail="Role must be 'admin' or 'manager'!"
         )
 
+    newUserdict["user_bday"] = date_to_unix(newUserdict['user_bday'])
     newUserdict["password"] = get_password_hash(newUserdict["password"])
     newUserdict["show"] = True
     newUserdict["user_id"] = 1 + (db.query(func.max(Users.user_id)).scalar() or 0)
@@ -79,9 +80,6 @@ def get_info_user(db: db_deps, current_user: CurrentUser):
         if user is None:
             raise HTTPException(status_code=204, detail="Can't find user !")
         
-        bday = datetime.combine(user.user_bday, datetime.min.time())
-        print(bday)
-        print(int(bday.timestamp()))
         res = UserReg(
             user_id = user.user_id,
             full_name = user.full_name, 
@@ -89,7 +87,7 @@ def get_info_user(db: db_deps, current_user: CurrentUser):
             user_name = user.user_name,
             user_mail = user.user_mail,
             user_nation = user.user_nation, 
-            user_bday = int(bday.timestamp()),
+            user_bday = user.user_bday,
             show = user.show 
 
         )
