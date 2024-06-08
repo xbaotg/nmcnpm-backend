@@ -7,7 +7,12 @@ from core.security import verify_password, get_password_hash
 from api.deps import CurrentUser, Annotated, List
 from schemas.users import UserCreateBase, UserReg
 from schemas.clubs import Club_Create
-from utils import is_valid_age, check_club_player_num, check_foreign_player
+from utils import (
+    is_valid_age,
+    check_club_player_num,
+    check_foreign_player,
+    date_to_unix,
+)
 
 from schemas.players import Player_Add_With_Club
 
@@ -57,6 +62,7 @@ def create_user(db: db_deps, new_user: UserCreateBase) -> Users | dict:
             status_code=401, detail="Role must be 'admin' or 'manager'!"
         )
 
+    newUserdict["user_bday"] = date_to_unix(newUserdict["user_bday"])
     newUserdict["password"] = get_password_hash(newUserdict["password"])
     newUserdict["show"] = True
     newUserdict["user_id"] = 1 + (db.query(func.max(Users.user_id)).scalar() or 0)

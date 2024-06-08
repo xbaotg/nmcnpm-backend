@@ -9,7 +9,7 @@ from core.db import db_deps, Depends
 from schemas.db import Clubs, Players, Users, Params, Matches, Events, GoalTypes
 from schemas.events import EventAdd
 
-from utils import is_admin, check_event_time, convert_from_attr, count_goals
+from utils import is_admin, check_event_time, convert_from_attr, count_goals, to_second
 
 # from utils import
 
@@ -49,12 +49,11 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
     # check time of event in (max_goal_time)
 
     try:
-        event_time = datetime.strptime(event.minute_event, f"%H:%M")
-        event_time = datetime.strftime(event_time, f"%H:%M")
+        event_time = datetime.strptime(event.seconds, f"%H:%M")
     except:
         raise HTTPException(status_code=400, detail="Invalid event time!")
-
-    check_event_time(db, event_time)
+    seconds =  to_second(event_time)
+    check_event_time(db, seconds)
 
     # check valid events name
 
@@ -72,9 +71,9 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
             or_(
                 Events.match_id == event.match_id,
                 Events.player_id == event.player_id,
-                Events.minute_event == datetime.strptime(event_time, "%H:%M").time(),
+                Events.seconds == seconds,
             ),
-            or_(Events.minute_event == datetime.strptime(event_time, "%H:%M").time()),
+            or_(Events.seconds == seconds),
         )
         .first()
     )
@@ -86,7 +85,7 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
     new_event = Events(
         match_id=event.match_id,
         events=event.event_name.upper(),
-        minute_event=event_time,
+        seconds=seconds,
         player_id=event.player_id,
         show=True,
     )
@@ -101,13 +100,17 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
 
 # DELETE
 @route.put("/delete")
-async def delete_event(db: db_deps, current_user: CurrentUser, id: int, time: str):
+async def delete_event(db: db_deps, current_user: CurrentUser, id: int, time: str = "HH:MM"):
+    try:
+        time = datetime.strftime(time, "%H:%M")
+    except:
+        raise HTTPException(status_code=400, detail="Invalid time of event!")
     is_admin(db, current_user)
     target = (
         db.query(Events)
         .filter(
             Events.show == True,
-            Events.minute_event == datetime.strptime(time, "%H:%M"),
+            Events.seconds == to_second(time),
             Events.match_id == id,
         )
         .first()
@@ -115,21 +118,25 @@ async def delete_event(db: db_deps, current_user: CurrentUser, id: int, time: st
     if not target:
         return {"message": "Can't find event"}
 
-    target.show == False
+    target.show = False
 
     db.commit()
     db.refresh(target)
-    return {"message": "Deleted successfully"}
+    return {"message": "Deleted successfully"}, target
 
-
-@route.put("/restore")
-async def restore_event(db: db_deps, current_user: CurrentUser, id: int, time: str):
+# DELETE from DATABASE
+@route.put("/delete-permanently")
+async def delete_event(db: db_deps, current_user: CurrentUser, id: int, time: str = "HH:MM"):
+    try:
+        time = datetime.strftime(time, "%H:%M")
+    except:
+        raise HTTPException(status_code=400, detail="Invalid time of event!")
     is_admin(db, current_user)
     target = (
         db.query(Events)
         .filter(
             Events.show == False,
-            Events.minute_event == datetime.strptime(time, "%H:%M"),
+            Events.seconds == to_second(time),
             Events.match_id == id,
         )
         .first()
@@ -137,7 +144,31 @@ async def restore_event(db: db_deps, current_user: CurrentUser, id: int, time: s
     if not target:
         return {"message": "Can't find event"}
 
-    target.show == True
+    db.delete(target)
+    db.commit()
+    return {"message": "Deleted successfully"}, target
+
+
+@route.put("/restore")
+async def restore_event(db: db_deps, current_user: CurrentUser, id: int, time: str = "HH:MM"):
+    try:
+        time = datetime.strftime(time, "%H:%M")
+    except:
+        raise HTTPException(status_code=400, detail="Invalid time of event!")
+    is_admin(db, current_user)
+    target = (
+        db.query(Events)
+        .filter(
+            Events.show == False,
+            Events.seconds == to_second(time),
+            Events.match_id == id,
+        )
+        .first()
+    )
+    if not target:
+        return {"message": "Can't find event"}
+
+    target.show = True
 
     db.commit()
     db.refresh(target)

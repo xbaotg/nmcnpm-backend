@@ -11,6 +11,20 @@ from sqlalchemy import (
 from core.db import Base
 
 
+# class Users(Base):
+#     __tablename__ = "users"
+
+#     user_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+#     full_name = Column(String, index=True)
+#     role = Column(String, index=True)
+#     user_name = Column(String, index=True)
+#     password = Column(String, index=True)
+#     user_nation = Column(String, index=True)
+#     user_bday = Column(Date, index=True)
+#     user_mail = Column(String, index=True)
+#     show = Column(Boolean, index=True)
+
+
 class Users(Base):
     __tablename__ = "users"
 
@@ -20,7 +34,7 @@ class Users(Base):
     user_name = Column(String, index=True)
     password = Column(String, index=True)
     user_nation = Column(String, index=True)
-    user_bday = Column(Date, index=True)
+    user_bday = Column(Integer, index=True)
     user_mail = Column(String, index=True)
     show = Column(Boolean, index=True)
 
