@@ -6,9 +6,10 @@ from sqlalchemy import text
 from typing import Annotated
 from fastapi import Depends
 
+
 class Database:
     def __init__(self, db_url: str):
-        self.engine = create_engine(db_url)
+        self.engine = create_engine(db_url, pool_size=50)
         self.SessionLocal = sessionmaker(
             autocommit=False, autoflush=False, bind=self.engine
         )
@@ -44,12 +45,20 @@ print("Connecting to database...")
 print(f"POSTGRES_SERVER: {config.POSTGRES_SERVER}")
 print(f"POSTGRES_PORT: {config.POSTGRES_PORT}")
 print(f"POSTGRES_DB: {config.POSTGRES_DB}")
-print()
 
 db_url = f"postgresql://{config.POSTGRES_USER}:{config.POSTGRES_PASSWORD}@{config.POSTGRES_SERVER}:{config.POSTGRES_PORT}/{config.POSTGRES_DB}"
 db = Database(db_url)
 Base = db.get_base()
 db_deps = Annotated[Session, Depends(db.get_db)]
 
+print("Connected to database !")
 
-        
+
+def get_params(model, db: Session):
+    try:
+        params = db.query(model).first()
+        return params
+    # finally:
+    #     db.close()
+    except Exception as e:
+        return {"message": f"Error: {str(e)}"}

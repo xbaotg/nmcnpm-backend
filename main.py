@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.main import router
 import argparse
 import uvicorn
+from logger import RouterLoggingMiddleware
+from loguru import logger
 
 
 def get_application() -> FastAPI:
@@ -16,6 +18,8 @@ def get_application() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # app.add_middleware(RouterLoggingMiddleware, logger=logger)
 
     # register routers
     app.include_router(router)

@@ -1,6 +1,6 @@
-from datetime import date
+from datetime import date, datetime
 
-from core.db import db_deps, db as code_db
+from core.db import db_deps, db, get_params
 from crud import create_user, get_info_user
 from fastapi import APIRouter, HTTPException, Depends
 from schemas.db import Users, Params
@@ -8,8 +8,26 @@ from schemas.users import UserCreateBase, UserReg, UserUpdate
 from sqlalchemy import func
 
 from api.deps import List, CurrentUser, get_password_hash, fuzz
+from utils import unix_to_date, date_to_unix
+
 
 route = APIRouter()
+
+
+def create_user_res(user):
+    # bday = datetime.combine(user.user_bday, datetime.min.time())
+    res = UserReg(
+        user_id=user.user_id,
+        full_name=user.full_name,
+        role=user.role,
+        user_name=user.user_name,
+        user_mail=user.user_mail,
+        user_nation=user.user_nation,
+        # user_bday = int(bday.timestamp()),
+        user_bday=user.user_bday,
+        show=user.show,
+    )
+    return res
 
 
 def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
@@ -41,15 +59,6 @@ def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
 
     return True
 
-        
-@route.get("/get-message")
-async def get_message(db: db_deps, current_user : CurrentUser):
-
-    hasPermission = get_user_permission(db, current_user, "admin")
-
-    return {
-        "message": "Hello my friends."
-    }
 
 @route.post("/create-user")
 async def create_user_route(
@@ -70,16 +79,21 @@ async def get_all_users(current_user: CurrentUser, db: db_deps):
         hasPermission = get_user_permission(db, current_user, "admin")
         db_users = db.query(Users).all()
 
-        return db_users
+        res = []
+        for user in db_users:
+            res.append(create_user_res(user))
+
+        return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@route.get("/get-info", response_model=UserReg)
+@route.get("/me", response_model=UserReg)
 async def get_user_info(current_user: CurrentUser, db: db_deps):
     try:
         res = get_info_user(db, current_user)
-        return UserReg(**res.__dict__)
+        return res
+        # return UserReg(**res.__dict__)
     except Exception as e:
         raise e
 
@@ -89,11 +103,14 @@ async def get_user_info(current_user: CurrentUser, db: db_deps):
 async def get_all_users(current_user: CurrentUser, db: db_deps):
     hasPermission = get_user_permission(db, current_user, "admin")
 
-    db_user = db.query(Users).filter(Users.show == True).all()
-    if db_user == 0:
-        raise HTTPException(status_code=404, detail="Cant find users")
+    db_users = db.query(Users).filter(Users.show == True).all()
+    if db_users == None:
+        raise HTTPException(status_code=204, detail="Cant find users")
+    res = []
+    for user in db_users:
+        res.append(create_user_res(user))
 
-    return db_user
+    return res
 
 
 # GET deleted users
@@ -103,11 +120,14 @@ async def get_all_users(current_user: CurrentUser, db: db_deps):
 async def get_all_users(current_user: CurrentUser, db: db_deps):
     hasPermission = get_user_permission(db, current_user, "admin")
 
-    db_user = db.query(Users).filter(Users.show == False).all()
-    if db_user == 0:
-        raise HTTPException(status_code=404, detail="Cant find users")
+    db_users = db.query(Users).filter(Users.show == False).all()
+    if db_users == None:
+        raise HTTPException(status_code=204, detail="Cant find users")
+    res = []
+    for user in db_users:
+        res.append(create_user_res(user))
 
-    return db_user
+    return res
 
 
 # GET user by name
@@ -171,7 +191,7 @@ async def permanently_delete_user(user_id: int, db: db_deps, current_user: Curre
 
 
 # Update users
-@route.put("/update-user-info/{user_id}", response_model=UserUpdate)
+@route.put("/update-user-info/{user_id}", response_model=UserUpdate | dict)
 async def update_user_info(
     user_id: int, new_info: UserUpdate, current_user: CurrentUser, db: db_deps
 ):
@@ -184,8 +204,11 @@ async def update_user_info(
         for key, value in update_info.items():  #
             if value == "string":
                 continue
-            if value == date.today():
-                continue
+            if key == "user_bday":
+                if value == date.today():
+                    continue
+                else:
+                    value = date_to_unix(value)
             if key == "password":
                 value = get_password_hash(value)
             setattr(target, key, value)
@@ -193,7 +216,16 @@ async def update_user_info(
         db.commit()
         db.refresh(target)
 
-        return target
+        return UserUpdate(
+            full_name=target.full_name,
+            role=target.role,
+            user_name=target.user_name,
+            password=new_info.password,
+            user_nation=target.user_nation,
+            user_bday=unix_to_date(target.user_bday),
+            user_mail=target.user_mail,
+        )
+        return {"message": "Update successfully!"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}!")
 
@@ -216,7 +248,11 @@ async def search_user_by_name(
         )
         if not matched_users:
             return {"message": f"Can't find any users match the name: {full_name}"}
-        return matched_users
+
+        res = []
+        for user in matched_users:
+            res.append(create_user_res(user))
+        return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
@@ -235,6 +271,9 @@ async def search_user_by_name(
         )
         if not matched_users:
             return {"message": f"Can't find any users match the nation: {nation}"}
-        return matched_users
+        res = []
+        for user in matched_users:
+            res.append(create_user_res(user))
+        return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
