@@ -407,8 +407,11 @@ def valid_update_match(db: db_deps, match: MatchUpdate, id: int):
     else:
         lineman = target.lineman_id
     # checkt start time
-    if match.start == 0:
-        match.start = target.start
+    # if match.start == 0:
+    #     match.start = target.start
+    
+    if match.finish == 0:
+        match.finish = target.finish
 
     match.team1 = team1
     match.team2 = team2
