@@ -235,13 +235,17 @@ async def update_match(
 
         else:
             # no goal update -> update other attributes -> check today < update.start
-            if today.date() >= start_time.date():
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Today is {today.strftime(f'%H:%M %d/%m/%Y')}, but match start at {start_time.strftime(f'%H:%M %d/%m/%Y')}",
-                )
+            if update.start != 0:
+                if today >= start_time:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Today is {today}, but match start at {start_time}",
+                    )
+            else:
+                start_time = target.start
 
             target.start = start_time
+            target.finish = update.finish
             target.team1 = update.team1
             target.team2 = update.team2
             target.ref_id = update.ref
