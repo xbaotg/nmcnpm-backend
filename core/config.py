@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     API_PREFIX_CLUBS: str
     API_PREFIX_MATCHES: str
     API_PREFIX_EVENTS: str
+    API_PREFIX_RANKING: str
 
 
 config = Settings()  # type: ignore

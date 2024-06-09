@@ -113,12 +113,15 @@ class Matches(Base):
 class Events(Base):
     __tablename__ = "events"
 
+    event_id = Column(Integer, primary_key=True, index=True)
     match_id = Column(
-        Integer, ForeignKey("matches.match_id"), primary_key=True, index=True
+        Integer, ForeignKey("matches.match_id"), index=True
     )
-    seconds = Column(Integer, primary_key=True, index=True)
-    events = Column(String, primary_key=True, index=True)
+    seconds = Column(Integer, index=True)
+    events = Column(String, index=True)
     player_id = Column(Integer, ForeignKey("players.player_id"), index=True)
+    team_id = Column(Integer, ForeignKey("clubs.club_id"), index=True)
+    
     show = Column(Boolean, index=True)
 
 
