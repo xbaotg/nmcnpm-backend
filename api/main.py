@@ -1,7 +1,17 @@
 from core.config import config
 from fastapi import APIRouter
 
-from .routes import auth, users, players, referees, clubs, params, matches, events, ranking
+from .routes import (
+    auth,
+    users,
+    players,
+    referees,
+    clubs,
+    params,
+    matches,
+    events,
+    ranking,
+)
 
 router = APIRouter()
 
