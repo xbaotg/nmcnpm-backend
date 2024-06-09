@@ -42,10 +42,6 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
     if not match:
         raise HTTPException(status_code=400, detail="Can't find match!")
 
-    # Check team_id == player.player_club
-    if not (event.team_id == match.team1 or event.team_id == match.team2):
-        raise HTTPException(status_code=400, detail="Team ID doesn't fit any team of the match!")
-
     # check valid player
     player = (
         db.query(Players)
@@ -59,12 +55,11 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
     if not player:
         raise HTTPException(status_code=400, detail="Can't find player!")
 
-    # check time of event in (max_goal_time)
+    # Check team_id == player.player_club
+    if not (event.team_id == player.player_club):
+        raise HTTPException(status_code=400, detail="The player is not in this team ID!")
 
-    # try:
-    #     event_time = datetime.strptime(event.seconds, f"%H:%M")
-    # except:
-    #     raise HTTPException(status_code=400, detail="Invalid event time!")
+    # check time of event in (max_goal_time
     check_event_time(db, event.seconds)
 
     # check valid events name
