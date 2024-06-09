@@ -13,18 +13,19 @@ from utils import unix_to_date, date_to_unix
 
 route = APIRouter()
 
+
 def create_user_res(user):
     # bday = datetime.combine(user.user_bday, datetime.min.time())
     res = UserReg(
-        user_id = user.user_id,
-        full_name = user.full_name, 
-        role = user.role, 
-        user_name = user.user_name,
-        user_mail = user.user_mail,
-        user_nation = user.user_nation, 
+        user_id=user.user_id,
+        full_name=user.full_name,
+        role=user.role,
+        user_name=user.user_name,
+        user_mail=user.user_mail,
+        user_nation=user.user_nation,
         # user_bday = int(bday.timestamp()),
-        user_bday = user.user_bday,
-        show = user.show 
+        user_bday=user.user_bday,
+        show=user.show,
     )
     return res
 
@@ -59,7 +60,6 @@ def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
     return True
 
 
-
 @route.post("/create-user")
 async def create_user_route(
     db: db_deps, current_user: CurrentUser, new_user: UserCreateBase
@@ -67,8 +67,7 @@ async def create_user_route(
     hasPermission = get_user_permission(db, current_user, "admin")
     # check valid username in crud.create_user
 
-    
-    return (create_user(db, new_user))
+    return create_user(db, new_user)
 
 
 # GET ALL USERS
@@ -129,7 +128,6 @@ async def get_all_users(current_user: CurrentUser, db: db_deps):
         res.append(create_user_res(user))
 
     return res
-
 
 
 # GET user by name
@@ -219,13 +217,13 @@ async def update_user_info(
         db.refresh(target)
 
         return UserUpdate(
-            full_name = target.full_name,
-            role = target.role,
-            user_name =  target.user_name,
-            password = new_info.password,
-            user_nation = target.user_nation,
-            user_bday = unix_to_date(target.user_bday),
-            user_mail = target.user_mail
+            full_name=target.full_name,
+            role=target.role,
+            user_name=target.user_name,
+            password=new_info.password,
+            user_nation=target.user_nation,
+            user_bday=unix_to_date(target.user_bday),
+            user_mail=target.user_mail,
         )
         return {"message": "Update successfully!"}
     except Exception as e:
@@ -250,8 +248,8 @@ async def search_user_by_name(
         )
         if not matched_users:
             return {"message": f"Can't find any users match the name: {full_name}"}
-        
-        res=[]
+
+        res = []
         for user in matched_users:
             res.append(create_user_res(user))
         return res
@@ -273,7 +271,7 @@ async def search_user_by_name(
         )
         if not matched_users:
             return {"message": f"Can't find any users match the nation: {nation}"}
-        res=[]
+        res = []
         for user in matched_users:
             res.append(create_user_res(user))
         return res

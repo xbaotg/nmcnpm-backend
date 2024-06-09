@@ -12,6 +12,8 @@ from schemas.matches import AddMatch, MatchResponse, MatchUpdate
 from loguru import logger
 
 from utils import (
+    datetime_to_unix,
+    unix_to_datetime,
     valid_add_match,
     valid_update_match,
     is_int,
@@ -74,14 +76,15 @@ async def get_matches(db: db_deps, club: str):
     for match in db_matches:
         res = MatchResponse(
             match_id=match.match_id,
-            team1=convert_from_attr(Clubs, match.team1, "club_id", "club_name"),
-            team2=convert_from_attr(Clubs, match.team2, "club_id", "club_name"),
-            start=str(match.start.strftime(f"%H:%M %d/%m/%Y")),
+            team1=match.team1,
+            team2=match.team2,
+            start=match.start,
+            finish=match.finish,
             goal1=match.goal1,
             goal2=match.goal2,
-            ref=convert_from_attr(Referees, match.ref_id, "ref_id", "ref_name"),
-            var=convert_from_attr(Referees, match.var_id, "ref_id", "ref_name"),
-            lineman=convert_from_attr(Referees, match.lineman_id, "ref_id", "ref_name"),
+            ref=match.ref_id,
+            var=match.var_id,
+            lineman=match.lineman_id,
         )
         res_list.append(res)
     return res_list
@@ -98,14 +101,15 @@ async def get_fixtures(db: db_deps):
     for match in db_matches:
         res = MatchResponse(
             match_id=match.match_id,
-            team1=convert_from_attr(Clubs, match.team1, "club_id", "club_name"),
-            team2=convert_from_attr(Clubs, match.team2, "club_id", "club_name"),
-            start=str(match.start.strftime(f"%H:%M %d/%m/%Y")),
+            team1=match.team1,
+            team2=match.team2,
+            start=match.start,
+            finish=match.finish,
             goal1=match.goal1,
             goal2=match.goal2,
-            ref=convert_from_attr(Referees, match.ref_id, "ref_id", "ref_name"),
-            var=convert_from_attr(Referees, match.var_id, "ref_id", "ref_name"),
-            lineman=convert_from_attr(Referees, match.lineman_id, "ref_id", "ref_name"),
+            ref=match.ref_id,
+            var=match.var_id,
+            lineman=match.lineman_id,
         )
         res_list.append(res)
     return res_list
@@ -122,14 +126,15 @@ async def get_matches_results(db: db_deps):
     for match in db_matches:
         res = MatchResponse(
             match_id=match.match_id,
-            team1=convert_from_attr(Clubs, match.team1, "club_id", "club_name"),
-            team2=convert_from_attr(Clubs, match.team2, "club_id", "club_name"),
-            start=str(match.start.strftime(f"%H:%M %d/%m/%Y")),
+            team1=match.team1,
+            team2=match.team2,
+            start=match.start,
+            finish=match.finish,
             goal1=match.goal1,
             goal2=match.goal2,
-            ref=convert_from_attr(Referees, match.ref_id, "ref_id", "ref_name"),
-            var=convert_from_attr(Referees, match.var_id, "ref_id", "ref_name"),
-            lineman=convert_from_attr(Referees, match.lineman_id, "ref_id", "ref_name"),
+            ref=match.ref_id,
+            var=match.var_id,
+            lineman=match.lineman_id,
         )
         res_list.append(res)
     return res_list
@@ -150,7 +155,8 @@ async def add_match(db: db_deps, current_user: CurrentUser, match: AddMatch):
         match_id=(max_id or 0) + 1,
         team1=db_match.team1,
         team2=db_match.team2,
-        start=datetime.strptime(db_match.start, f"%H:%M %d/%m/%Y"),
+        start=db_match.start,
+        finish=None,
         goal1=None,
         goal2=None,
         ref_id=db_match.ref,
@@ -210,11 +216,11 @@ async def update_match(
 
     # check if the input is valid
     update = valid_update_match(db, update, id)
-
-    # update
     try:
-        today = datetime.now()
-        start_time = datetime.strptime(update.start, f"%H:%M %d/%m/%Y")
+        # today = datetime.now()
+        # start_time = datetime.strptime(update.start, f"%H:%M %d/%m/%Y")
+        today = datetime_to_unix(datetime.now())
+        start_time = update.start
 
         if update.goal1 != -1 and update.goal2 != -1:
             # update goal -> no update time -> check today >= update.start
@@ -266,7 +272,8 @@ async def update_result(
         raise HTTPException(status_code=400, detail="Can't find any matches!")
 
     # check if match has finished
-    today = datetime.now()
+    # today = datetime.now()
+    today = datetime_to_unix(datetime.now())
     if today < target.start:
         raise HTTPException(
             status_code=400, detail="Can't update result for unfinished matches!"

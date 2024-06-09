@@ -43,11 +43,9 @@ class Update_Params(BaseModel):
 
     class Config:
         orm_mode = True
-    
 
 
 class GoalTypeAdd(BaseModel):
     type_id: int
     type_name: str
     show: bool
-    

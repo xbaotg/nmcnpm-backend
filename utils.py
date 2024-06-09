@@ -264,14 +264,14 @@ def valid_add_match(
 
     # check start time
     # convert string to datetime
-    start_time = datetime.strptime(match.start, f"%H:%M %d/%m/%Y")
+    start_time = match.start
 
     # check overlap between matches (1 team play 1 match per day)
     overlap = (
         db.query(Matches)
         .filter(
             Matches.show == True,
-            func.date(Matches.start) == start_time.date(),
+            Matches.start == start_time,
             or_(Matches.team1 == team1),
             or_(Matches.team2 == team1),
             or_(Matches.team1 == team2),
@@ -285,11 +285,11 @@ def valid_add_match(
         )
 
         # check today <= start_time
-    current = datetime.now()
-    if current.date() >= start_time.date():
+    current = datetime_to_unix(datetime.now())
+    if current >= start_time:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid match start time: start on {start_time.date()} but today is {current.date()}",
+            detail=f"Invalid match start time: start on {start_time} but today is {current}",
         )
         return {"message": "Invalid match start time !"}
 
@@ -347,43 +347,68 @@ def valid_update_match(db: db_deps, match: MatchUpdate, id: int):
         db.query(Matches).filter(Matches.match_id == id, Matches.show == True).first()
     )
     # check valid teams, ref, var, lineman
-    if match.team1 != "string":
-        team1 = convert_from_attr(Clubs, match.team1, "club_name", "club_id", True)
+    if match.team1 != 0:
+        team1 = (
+            db.query(Clubs)
+            .filter(Clubs.show == True, Clubs.club_id == match.team1)
+            .first()
+            .club_id
+        )
         if not team1:
             raise HTTPException(status_code=400, detail=f"Invalid host team !")
     else:
         team1 = target.team1
 
-    if match.team2 != "string":
-        team2 = convert_from_attr(Clubs, match.team2, "club_name", "club_id", True)
+    if match.team2 != 0:
+        team2 = (
+            db.query(Clubs)
+            .filter(Clubs.show == True, Clubs.club_id == match.team2)
+            .first()
+            .club_id
+        )
         if not team2:
             raise HTTPException(status_code=400, detail=f"Invalid away team !")
     else:
         team2 = target.team2
 
-    if match.ref != "string":
-        ref = convert_from_attr(Referees, match.ref, "ref_name", "ref_id", True)
+    if match.ref != 0:
+        ref = (
+            db.query(Referees)
+            .filter(Referees.show == True, Referees.ref_id == match.ref)
+            .first()
+            .ref_id
+        )
         if not ref:
             raise HTTPException(status_code=400, detail=f"Referee not found !")
     else:
         ref = target.ref_id
 
-    if match.var != "string":
-        var = convert_from_attr(Referees, match.var, "ref_name", "ref_id", True)
+    if match.var != 0:
+        var = (
+            db.query(Referees)
+            .filter(Referees.show == True, Referees.ref_id == match.var)
+            .first()
+            .ref_id
+        )
         if not var:
             raise HTTPException(status_code=400, detail=f"Var referee not found !")
     else:
         var = target.var_id
 
-    if match.lineman != "string":
-        lineman = convert_from_attr(Referees, match.lineman, "ref_name", "ref_id", True)
+    if match.lineman != 0:
+        lineman = (
+            db.query(Referees)
+            .filter(Referees.show == True, Referees.ref_id == match.lineman)
+            .first()
+            .ref_id
+        )
         if not lineman:
             raise HTTPException(status_code=400, detail=f"Lineman referee not found !")
     else:
         lineman = target.lineman_id
     # checkt start time
-    if match.start == "HH:MM dd/mm/YY":
-        match.start = str(target.start.strftime(f"%H:%M %d/%m/%Y"))
+    if match.start == 0:
+        match.start = target.start
 
     match.team1 = team1
     match.team2 = team2

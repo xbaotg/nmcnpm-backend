@@ -52,7 +52,7 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
         event_time = datetime.strptime(event.seconds, f"%H:%M")
     except:
         raise HTTPException(status_code=400, detail="Invalid event time!")
-    seconds =  to_second(event_time)
+    seconds = to_second(event_time)
     check_event_time(db, seconds)
 
     # check valid events name
@@ -100,7 +100,9 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
 
 # DELETE
 @route.put("/delete")
-async def delete_event(db: db_deps, current_user: CurrentUser, id: int, time: str = "HH:MM"):
+async def delete_event(
+    db: db_deps, current_user: CurrentUser, id: int, time: str = "HH:MM"
+):
     try:
         time = datetime.strftime(time, "%H:%M")
     except:
@@ -124,9 +126,12 @@ async def delete_event(db: db_deps, current_user: CurrentUser, id: int, time: st
     db.refresh(target)
     return {"message": "Deleted successfully"}, target
 
+
 # DELETE from DATABASE
 @route.put("/delete-permanently")
-async def delete_event(db: db_deps, current_user: CurrentUser, id: int, time: str = "HH:MM"):
+async def delete_event(
+    db: db_deps, current_user: CurrentUser, id: int, time: str = "HH:MM"
+):
     try:
         time = datetime.strftime(time, "%H:%M")
     except:
@@ -150,7 +155,9 @@ async def delete_event(db: db_deps, current_user: CurrentUser, id: int, time: st
 
 
 @route.put("/restore")
-async def restore_event(db: db_deps, current_user: CurrentUser, id: int, time: str = "HH:MM"):
+async def restore_event(
+    db: db_deps, current_user: CurrentUser, id: int, time: str = "HH:MM"
+):
     try:
         time = datetime.strftime(time, "%H:%M")
     except:
