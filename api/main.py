@@ -1,10 +1,11 @@
 from core.config import config
 from fastapi import APIRouter
 
-from .routes import auth, users, players, referees, clubs, params, matches, events
+from .routes import auth, users, players, referees, clubs, params, matches, events, ranking
 
 router = APIRouter()
 
+router.include_router(ranking.route, prefix=config.API_PREFIX_RANKING, tags=["ranking"])
 router.include_router(auth.router, prefix=config.API_PREFIX_AUTH, tags=["auth"])
 router.include_router(events.route, prefix=config.API_PREFIX_EVENTS, tags=["events"])
 router.include_router(matches.route, prefix=config.API_PREFIX_MATCHES, tags=["matches"])
