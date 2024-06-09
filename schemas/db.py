@@ -88,7 +88,7 @@ class Referees(Base):
 
     ref_id = Column(Integer, primary_key=True, index=True)
     ref_name = Column(String, index=True)
-    # ref_birthd = Column(String, index=True)
+    ref_bday = Column(Integer, index=True)
     ref_nation = Column(String, index=True)
     ref_mail = Column(String, index=True)
     show = Column(Boolean, index=True)

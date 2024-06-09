@@ -87,6 +87,19 @@ async def get_ref(ref_name: str, db: db_deps, threshold: int = 80):
     return matched_refs
 
 
+@route.get("/get-all", response_model=List[RefShow])
+async def get_all_refs(db: db_deps):
+    try:
+        refs = db.query(Referees).filter(Referees.show == True).all()
+        if not refs:
+            raise HTTPException(status_code=204, detail="No refs found")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+    return refs
+
+
 @route.put("/update_ref")
 async def update_ref(
     ref_id: int, ref_update: RefUpdate, db: db_deps
@@ -110,6 +123,7 @@ async def update_ref(
 @route.put("/delete_ref")
 async def delete_ref(ref_id: int, current_user: CurrentUser, db: db_deps):
     hasPermission = get_user_permission(db, current_user, "admin")
+
     try:
         target = db.query(Referees).filter(Referees.ref_id == ref_id).first()
 
@@ -156,4 +170,5 @@ async def permanently_delete_ref(ref_id: int, db: db_deps, current_user: Current
 
     db.delete(target)
     db.commit()
+
     return {"message": f"Delete refs with id {ref_id} successfully !"}
