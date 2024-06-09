@@ -4,15 +4,15 @@ from datetime import date, time, datetime, timedelta
 
 
 class AddMatch(BaseModel):
-    team1: str | int
-    team2: str | int
+    team1: int
+    team2: int
     start: int = datetime.now().timestamp()
     # finish:
     # goal1: int -> new match -> goal = None
     # goal2: int
-    ref: int | str
-    var: int | str
-    lineman: int | str
+    ref: int
+    var: int
+    lineman: int
     # show: bool = True
 
 
@@ -31,9 +31,10 @@ class MatchResponse(BaseModel):
 
 
 class MatchUpdate(BaseModel):
-    team1: str
-    team2: str
-    start: str = "HH:MM dd/mm/YY"
+    team1: int
+    team2: int
+    start: int
+    finish: int
     goal1: int = -1
     goal2: int = -1
     ref: int

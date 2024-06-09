@@ -20,7 +20,7 @@ class UserReg(BaseModel):
     user_name: str | None
     user_mail: str | None
     user_nation: str | None
-    user_bday: int 
+    user_bday: int
     show: bool | None
 
     class Config:
