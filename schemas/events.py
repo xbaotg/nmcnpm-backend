@@ -8,4 +8,5 @@ class EventAdd(BaseModel):
     events: str
     seconds: int
     player_id: int
+    team_id: int
     # show: bool = True

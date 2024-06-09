@@ -21,6 +21,14 @@ async def default(db: db_deps):
     db_events = db.query(Events).filter(Events.show == True).all()
     return db_events
 
+@route.get("/get-events-of-match")
+async def get_events_of_matcH(db: db_deps, match_id : int):
+    events = db.query(Events).filter(Events.show == True, Events.match_id == match_id).all()
+
+    if not events:
+        return {"message": "This match doesn't have any events!"}
+    
+    return events
 
 @route.post("/add-event")
 async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
@@ -33,6 +41,11 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
     )
     if not match:
         raise HTTPException(status_code=400, detail="Can't find match!")
+
+    # Check team_id == player.player_club
+    if not (event.team_id == match.team1 or event.team_id == match.team2):
+        raise HTTPException(status_code=400, detail="Team ID doesn't fit any team of the match!")
+
     # check valid player
     player = (
         db.query(Players)
@@ -48,17 +61,16 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
 
     # check time of event in (max_goal_time)
 
-    try:
-        event_time = datetime.strptime(event.seconds, f"%H:%M")
-    except:
-        raise HTTPException(status_code=400, detail="Invalid event time!")
-    seconds =  to_second(event_time)
-    check_event_time(db, seconds)
+    # try:
+    #     event_time = datetime.strptime(event.seconds, f"%H:%M")
+    # except:
+    #     raise HTTPException(status_code=400, detail="Invalid event time!")
+    check_event_time(db, event.seconds)
 
     # check valid events name
 
     event_name = convert_from_attr(
-        GoalTypes, event.event_name, "type_name", "type_id", True
+        GoalTypes, event.events, "type_name", "type_id", True
     )
     if not event_name:
         raise HTTPException(status_code=400, detail="Invalid event name!")
@@ -71,9 +83,9 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
             or_(
                 Events.match_id == event.match_id,
                 Events.player_id == event.player_id,
-                Events.seconds == seconds,
+                Events.seconds == event.seconds,
             ),
-            or_(Events.seconds == seconds),
+            or_(Events.seconds == event.seconds),
         )
         .first()
     )
@@ -81,16 +93,18 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
     if dup:
         raise HTTPException(status_code=400, detail=f"Duplicated event!")
 
+
     # if no conflict -> add
     new_event = Events(
+        event_id = 1+(db.query(func.max(Events.event_id)).scalar() or 0),
         match_id=event.match_id,
-        events=event.event_name.upper(),
-        seconds=seconds,
+        events=event.events.upper(),
+        seconds=event.seconds,
         player_id=event.player_id,
+        team_id=event.team_id,
         show=True,
     )
 
-    print(event_time)
     db.add(new_event)
     db.commit()
     db.refresh(new_event)
@@ -100,18 +114,15 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
 
 # DELETE
 @route.put("/delete")
-async def delete_event(db: db_deps, current_user: CurrentUser, id: int, time: str = "HH:MM"):
-    try:
-        time = datetime.strftime(time, "%H:%M")
-    except:
-        raise HTTPException(status_code=400, detail="Invalid time of event!")
+async def delete_event(db: db_deps, current_user: CurrentUser, event_id: int):
     is_admin(db, current_user)
     target = (
         db.query(Events)
         .filter(
+            # Events.seconds == to_second(time),
+            # Events.match_id == id,
             Events.show == True,
-            Events.seconds == to_second(time),
-            Events.match_id == id,
+            Events.event_id == event_id
         )
         .first()
     )
@@ -126,18 +137,13 @@ async def delete_event(db: db_deps, current_user: CurrentUser, id: int, time: st
 
 # DELETE from DATABASE
 @route.put("/delete-permanently")
-async def delete_event(db: db_deps, current_user: CurrentUser, id: int, time: str = "HH:MM"):
-    try:
-        time = datetime.strftime(time, "%H:%M")
-    except:
-        raise HTTPException(status_code=400, detail="Invalid time of event!")
+async def delete_event(db: db_deps, current_user: CurrentUser, event_id: int):
     is_admin(db, current_user)
     target = (
         db.query(Events)
         .filter(
-            Events.show == False,
-            Events.seconds == to_second(time),
-            Events.match_id == id,
+            Events.event_id == event_id,
+            Events.show == False
         )
         .first()
     )
@@ -150,18 +156,13 @@ async def delete_event(db: db_deps, current_user: CurrentUser, id: int, time: st
 
 
 @route.put("/restore")
-async def restore_event(db: db_deps, current_user: CurrentUser, id: int, time: str = "HH:MM"):
-    try:
-        time = datetime.strftime(time, "%H:%M")
-    except:
-        raise HTTPException(status_code=400, detail="Invalid time of event!")
+async def restore_event(db: db_deps, current_user: CurrentUser, event_id: int):
     is_admin(db, current_user)
     target = (
         db.query(Events)
         .filter(
             Events.show == False,
-            Events.seconds == to_second(time),
-            Events.match_id == id,
+            Events.event_id == event_id,
         )
         .first()
     )
