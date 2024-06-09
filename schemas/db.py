@@ -11,20 +11,6 @@ from sqlalchemy import (
 from core.db import Base
 
 
-# class Users(Base):
-#     __tablename__ = "users"
-
-#     user_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-#     full_name = Column(String, index=True)
-#     role = Column(String, index=True)
-#     user_name = Column(String, index=True)
-#     password = Column(String, index=True)
-#     user_nation = Column(String, index=True)
-#     user_bday = Column(Date, index=True)
-#     user_mail = Column(String, index=True)
-#     show = Column(Boolean, index=True)
-
-
 class Users(Base):
     __tablename__ = "users"
 
@@ -131,5 +117,16 @@ class GoalTypes(Base):
     show = Column(Boolean, index=True)
 
 
-# class Ranking(Base):
-#     __tablename__ = "ranking"
+class Ranking(Base):
+    __tablename__ = "ranking"
+
+    club_id = Column(Integer, ForeignKey("clubs.club_id") ,primary_key=True,  index = True)
+    away_goals = Column(Integer, index = True)
+    club_points = Column(Integer, index = True)
+    club_win = Column(Integer, index = True)
+    club_draw = Column(Integer, index = True)
+    club_lost = Column(Integer, index = True)
+    club_goals = Column(Integer, index = True)
+    club_gconcede = Column(Integer, index = True)
+    club_gdif = Column(Integer, index = True)
+    show = Column(Boolean, index = True)
