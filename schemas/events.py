@@ -9,4 +9,12 @@ class EventAdd(BaseModel):
     seconds: int
     player_id: int
     team_id: int
-    # show: bool = True
+
+
+class EventUpdate(BaseModel):
+    event_id: int
+    match_id: int
+    events: str
+    seconds: int
+    player_id: int
+    team_id: int

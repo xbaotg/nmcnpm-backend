@@ -20,6 +20,7 @@ class PlayerShow(BaseModel):
     player_pos: str
     player_nation: str
     js_number: int
+    player_id: int
 
 
 class PlayerUpdate(BaseModel):

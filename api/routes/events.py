@@ -1,17 +1,19 @@
-from datetime import date, time, datetime
-
-from fastapi import APIRouter, Depends, FastAPI, HTTPException
-from fuzzywuzzy import fuzz
+from fastapi import APIRouter, HTTPException
 from sqlalchemy import func, or_
 
-from api.deps import CurrentUser, List
+from api.deps import CurrentUser
 from core.db import db_deps, Depends
 from schemas.db import Clubs, Players, Users, Params, Matches, Events, GoalTypes
-from schemas.events import EventAdd
+from schemas.events import EventAdd, EventUpdate
 
-from utils import is_admin, check_event_time, convert_from_attr, count_goals, to_second
-
-# from utils import
+from utils import (
+    is_admin,
+    check_event_time,
+    convert_from_attr,
+    count_goals,
+    to_second,
+    update_match,
+)
 
 route = APIRouter()
 
@@ -21,24 +23,29 @@ async def default(db: db_deps):
     db_events = db.query(Events).filter(Events.show == True).all()
     return db_events
 
+
 @route.get("/get-events-of-match")
-async def get_events_of_matcH(db: db_deps, match_id : int):
-    events = db.query(Events).filter(Events.show == True, Events.match_id == match_id).all()
+async def get_events_of_matcH(db: db_deps, match_id: int):
+    events = (
+        db.query(Events).filter(Events.show == True, Events.match_id == match_id).all()
+    )
 
     if not events:
         return {"message": "This match doesn't have any events!"}
-    
+
     return events
 
-@route.post("/add-event")
+
+@route.post("/add")
 async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
     is_admin(db, current_user)
-    # check valid match
+
     match = (
         db.query(Matches)
         .filter(Matches.show == True, Matches.match_id == event.match_id)
         .first()
     )
+
     if not match:
         raise HTTPException(status_code=400, detail="Can't find match!")
 
@@ -52,17 +59,17 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
         )
         .first()
     )
+
     if not player:
         raise HTTPException(status_code=400, detail="Can't find player!")
 
     # Check team_id == player.player_club
     if not (event.team_id == player.player_club):
-        raise HTTPException(status_code=400, detail="The player is not in this team ID!")
+        raise HTTPException(
+            status_code=400, detail="The player is not in this team ID!"
+        )
 
-    # check time of event in (max_goal_time
     check_event_time(db, event.seconds)
-
-    # check valid events name
 
     event_name = convert_from_attr(
         GoalTypes, event.events, "type_name", "type_id", True
@@ -88,10 +95,9 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
     if dup:
         raise HTTPException(status_code=400, detail=f"Duplicated event!")
 
-
     # if no conflict -> add
     new_event = Events(
-        event_id = 1+(db.query(func.max(Events.event_id)).scalar() or 0),
+        event_id=1 + (db.query(func.max(Events.event_id)).scalar() or 0),
         match_id=event.match_id,
         events=event.events.upper(),
         seconds=event.seconds,
@@ -104,7 +110,81 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
     db.commit()
     db.refresh(new_event)
 
+    # update match
+    update_match(db, match.match_id)
+
     return {"message": "Add event successfully!"}, new_event
+
+
+# update
+@route.put("/update")
+def update_event(db: db_deps, current_user: CurrentUser, event: EventUpdate):
+    is_admin(db, current_user)
+
+    target = (
+        db.query(Events)
+        .filter(
+            Events.show == True,
+            Events.event_id == event.event_id,
+        )
+        .first()
+    )
+
+    if not target:
+        return {"message": "Can't find event"}
+
+    match = (
+        db.query(Matches)
+        .filter(Matches.show == True, Matches.match_id == event.match_id)
+        .first()
+    )
+
+    if not match:
+        raise HTTPException(status_code=400, detail="Can't find match!")
+
+    # check valid player
+    player = (
+        db.query(Players)
+        .filter(
+            Players.show == True,
+            Players.player_id == event.player_id,
+            or_(Players.player_club == match.team1, Players.player_club == match.team2),
+        )
+        .first()
+    )
+
+    if not player:
+        raise HTTPException(status_code=400, detail="Can't find player!")
+
+    # Check team_id == player.player_club
+    if not (event.team_id == player.player_club):
+        raise HTTPException(
+            status_code=400, detail="The player is not in this team ID!"
+        )
+
+    check_event_time(db, event.seconds)
+
+    event_name = convert_from_attr(
+        GoalTypes, event.events, "type_name", "type_id", True
+    )
+
+    if not event_name:
+        raise HTTPException(status_code=400, detail="Invalid event name!")
+
+    # check duplicate
+    target.match_id = event.match_id
+    target.events = event.events
+    target.seconds = event.seconds
+    target.player_id = event.player_id
+    target.team_id = event.team_id
+
+    db.commit()
+    db.refresh(target)
+
+    # update match
+    update_match(db, match.match_id)
+
+    return {"message": "Updated successfully"}, target
 
 
 # DELETE
@@ -114,10 +194,8 @@ async def delete_event(db: db_deps, current_user: CurrentUser, event_id: int):
     target = (
         db.query(Events)
         .filter(
-            # Events.seconds == to_second(time),
-            # Events.match_id == id,
             Events.show == True,
-            Events.event_id == event_id
+            Events.event_id == event_id,
         )
         .first()
     )
@@ -128,7 +206,12 @@ async def delete_event(db: db_deps, current_user: CurrentUser, event_id: int):
 
     db.commit()
     db.refresh(target)
+
+    # update match
+    update_match(db, target.match_id)
+
     return {"message": "Deleted successfully"}, target
+
 
 # DELETE from DATABASE
 @route.put("/delete-permanently")
@@ -136,10 +219,7 @@ async def delete_event(db: db_deps, current_user: CurrentUser, event_id: int):
     is_admin(db, current_user)
     target = (
         db.query(Events)
-        .filter(
-            Events.event_id == event_id,
-            Events.show == False
-        )
+        .filter(Events.event_id == event_id, Events.show == False)
         .first()
     )
     if not target:

@@ -408,7 +408,6 @@ def check_event_time(db: db_deps, time: int):
 
 # AUTO COUNT GOALS FOR A MATCH
 def count_goals(db: db_deps, match_id: int):
-    # check valid target
     events = (
         db.query(Events)
         .filter(
@@ -429,7 +428,7 @@ def count_goals(db: db_deps, match_id: int):
 
     goal1 = 0
     goal2 = 0
-    # no events -> return
+
     if len(events) == 0:
         return goal1, goal2
 
@@ -446,3 +445,26 @@ def count_goals(db: db_deps, match_id: int):
             goal2 += 1
 
     return goal1, goal2
+
+
+def update_match(db: db_deps, match_id: int):
+    target = (
+        db.query(Matches)
+        .filter(Matches.match_id == match_id, Matches.show == True)
+        .first()
+    )
+
+    if not target:
+        raise HTTPException(status_code=400, detail="Can't find any matches!")
+
+    goal1, goal2 = count_goals(db, match_id)
+    target.goal1 = goal1
+    target.goal2 = goal2
+
+    try:
+        db.commit()
+        db.refresh(target)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+    return target
