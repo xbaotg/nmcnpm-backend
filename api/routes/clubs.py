@@ -170,8 +170,13 @@ async def get_all_players_of_clubs(db: db_deps, club_name: str):
         .filter(Players.player_club == search_club.club_id, Players.show == True)
         .all()
     )
+    # convert to PlayerShow
     if db_players:
-        return db_players
+        res = []
+        for player in db_players:
+            player_res = PlayerShow(**vars(player))
+            res.append(player_res)
+        return res
     else:
         raise HTTPException(
             status_code=204,

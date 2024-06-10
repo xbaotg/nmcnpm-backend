@@ -205,10 +205,8 @@ async def update_user_info(
             if value == "string":
                 continue
             if key == "user_bday":
-                if value == date.today():
+                if value == 0:
                     continue
-                else:
-                    value = date_to_unix(value)
             if key == "password":
                 value = get_password_hash(value)
             setattr(target, key, value)
@@ -222,7 +220,7 @@ async def update_user_info(
             user_name=target.user_name,
             password=new_info.password,
             user_nation=target.user_nation,
-            user_bday=unix_to_date(target.user_bday),
+            user_bday=(target.user_bday),
             user_mail=target.user_mail,
         )
         return {"message": "Update successfully!"}
