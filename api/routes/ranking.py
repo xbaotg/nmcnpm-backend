@@ -15,6 +15,7 @@ from utils import (
 route = APIRouter()
 
 
+# RANKING BY SCORE
 """
 idea sẽ là lặp qua tất cả các clubs, tạo 1 object với khóa là club id
 
