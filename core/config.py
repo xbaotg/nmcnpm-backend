@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     API_PREFIX_MATCHES: str
     API_PREFIX_EVENTS: str
     API_PREFIX_RANKING: str
+    API_PREFIX_GOALTYPES: str
 
 
 config = Settings()  # type: ignore

@@ -290,7 +290,7 @@ async def update_ranking_values(db: db_deps):
         else:  # team1 win - team2 lost
             rank_club1.club_win = (rank_club1.club_win or 0) + 1
             rank_club2.club_lost = (rank_club2.club_lost or 0) + 1
-        
+
         # update gconcede
         rank_club1.club_gconcede += match.goal2
         rank_club2.club_gconcede += match.goal1
@@ -317,19 +317,19 @@ async def update_ranking_values(db: db_deps):
 @route.get("/rank-with-priority")
 async def rank_with_priority(
     db: db_deps,
-    crit1: Criteria, 
-    crit2: Criteria = Criteria.none, 
-    crit3: Criteria = Criteria.none, 
+    crit1: Criteria,
+    crit2: Criteria = Criteria.none,
+    crit3: Criteria = Criteria.none,
     crit4: Criteria = Criteria.none,
     crit5: Criteria = Criteria.none,
-    desc: bool = True 
+    desc: bool = True,
 ):
-    # create attributes names    
-    crit1 = (str(crit1).replace("Criteria.", ""))
-    crit2 = (str(crit2).replace("Criteria.", ""))
-    crit3 = (str(crit3).replace("Criteria.", ""))
-    crit4 = (str(crit4).replace("Criteria.", ""))
-    crit5 = (str(crit5).replace("Criteria.", ""))
+    # create attributes names
+    crit1 = str(crit1).replace("Criteria.", "")
+    crit2 = str(crit2).replace("Criteria.", "")
+    crit3 = str(crit3).replace("Criteria.", "")
+    crit4 = str(crit4).replace("Criteria.", "")
+    crit5 = str(crit5).replace("Criteria.", "")
 
     if crit2 == "none":
         crit2 = crit1
@@ -339,8 +339,6 @@ async def rank_with_priority(
         crit4 = crit1
     if crit5 == "none":
         crit5 = crit1
-
-    
 
     # query and order
     query = db.query(Ranking).filter(Ranking.show == True)
@@ -361,8 +359,6 @@ async def rank_with_priority(
             getattr(Ranking, crit4),
             getattr(Ranking, crit5),
         )
-
-
 
     results = query.all()
 
