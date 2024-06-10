@@ -27,3 +27,18 @@ class Criteria(str, Enum):
     by_win = "win"
     by_draw = "draw"
     by_lost = "lost"
+
+class RankingRes(BaseModel):
+    club_id: int
+    away_goals: int 
+    club_points: int 
+    club_win: int 
+    club_draw: int 
+    club_lost: int 
+    club_goals: int 
+    club_gconcede: int 
+    club_gdif: int 
+    show: bool
+    next_match: int | None
+    recent_matches: List[int]
+    
