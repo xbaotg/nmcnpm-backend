@@ -13,23 +13,23 @@ from utils import is_valid_age, MIN_CLUB_PLAYER, MAX_CLUB_PLAYER
 
 route = APIRouter()
 
-
 def create_player_res(player):
     bday = None
     if player.player_bday is not None:
-        bday = int(
-            datetime.combine(player.player_bday, datetime.min.time()).timestamp()
-        )
+        bday = player.player_bday
     else:
         bday = player.player_bday
     return PlayerShow(
+        player_id=player.player_id,
         player_name=player.player_name,
         player_bday=bday,
         player_club=player.player_club,
         player_pos=player.player_pos,
         player_nation=player.player_nation,
         js_number=player.js_number,
+        ava_url=player.avatar_url,
     )
+
 
 
 def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
@@ -82,55 +82,47 @@ async def add_players(
         ):
             return {"message": "Player already existed !"}
 
-    # try:
+    try:
     # hasPermission = get_user_permission(current_user, db, "manager")
-    newPlayerDict = player.dict()
-    for key, value in newPlayerDict.items():
-        if value == "string":
-            return {"message": f"{key} is required."}
-        if key == "player_bday" and not is_valid_age(value):
-            return {"message": "Player age is not legal"}
+        newPlayerDict = player.dict()
+        for key, value in newPlayerDict.items():
+            if value == "string":
+                return {"message": f"{key} is required."}
+            if key == "player_bday" and not is_valid_age(value):
+                return {"message": "Player age is not legal"}
 
-    count = db.query(func.max(Players.player_id)).scalar()
-    newPlayerDict["player_id"] = (count or 0) + 1
-    new_db_player = Players(**newPlayerDict)
+        count = db.query(func.max(Players.player_id)).scalar()
+        newPlayerDict["player_id"] = (count or 0) + 1
+        new_db_player = Players(**newPlayerDict)
+        
+        club = (
+            db.query(Clubs)
+            .filter(Clubs.show == True, Clubs.club_id == player.player_club)
+            .first()
+        )
+        if not club:
+            return {"message": "Club not found"}
+        if club.total_player + 1 > MAX_CLUB_PLAYER:
+            return {"message": "Total player is larger than MAX_CLUB_PLAYER"}
 
-    # total_club_player = (
-    #     db.query(Clubs)
-    #     .filter(Clubs.show == True, Clubs.club_id == player.player_club)
-    #     .first()
-    #     .total_player
-    # )
-    # if total_club_player + 1 > MAX_CLUB_PLAYER:
-    #     return {"message": "Total player is larger than MAX_CLUB_PLAYER"}
-    club = (
-        db.query(Clubs)
-        .filter(Clubs.show == True, Clubs.club_id == player.player_club)
-        .first()
-    )
-    if not club:
-        return {"message": "Club not found"}
-    if club.total_player + 1 > MAX_CLUB_PLAYER:
-        return {"message": "Total player is larger than MAX_CLUB_PLAYER"}
+        db.add(new_db_player)
+        db.commit()
+        db.refresh(new_db_player)
 
-    db.add(new_db_player)
-    db.commit()
-    db.refresh(new_db_player)
+        # Cập nhật total_player của câu lạc bộ
+        club.total_player += 1
+        db.commit()
+        db.refresh(club)
 
-    # Cập nhật total_player của câu lạc bộ
-    club.total_player += 1
-    db.commit()
-    db.refresh(club)
+        return new_db_player
 
-    return new_db_player
+    except HTTPException as e:
+        db.rollback()
+        raise e
 
-    # except HTTPException as e:
-    #     db.rollback()
-    #     raise e
-
-    # except Exception as e:
-    #     db.rollback()
-    #     raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 
 @route.get("/get_players_by_name", response_model=List[PlayerShow])

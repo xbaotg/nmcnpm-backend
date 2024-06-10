@@ -48,6 +48,7 @@ class Players(Base):
     player_pos = Column(String, index=True)
     player_nation = Column(String, index=True)
     js_number = Column(Integer, index=True)
+    avatar_url = Column(String, index=True, nullable=True)
     show = Column(Boolean, index=True)
 
 
