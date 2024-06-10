@@ -82,40 +82,55 @@ async def add_players(
         ):
             return {"message": "Player already existed !"}
 
-    try:
-        # hasPermission = get_user_permission(current_user, db, "manager")
-        newPlayerDict = player.dict()
-        for key, value in newPlayerDict.items():
-            if value == "string":
-                return {"message": f"{key} is required."}
-            if key == "player_bday" and not is_valid_age(value):
-                return {"message": "Player age is not legal"}
+    # try:
+    # hasPermission = get_user_permission(current_user, db, "manager")
+    newPlayerDict = player.dict()
+    for key, value in newPlayerDict.items():
+        if value == "string":
+            return {"message": f"{key} is required."}
+        if key == "player_bday" and not is_valid_age(value):
+            return {"message": "Player age is not legal"}
 
-        count = db.query(func.max(Players.player_id)).scalar()
-        newPlayerDict["player_id"] = (count or 0) + 1
-        new_db_player = Players(**newPlayerDict)
+    count = db.query(func.max(Players.player_id)).scalar()
+    newPlayerDict["player_id"] = (count or 0) + 1
+    new_db_player = Players(**newPlayerDict)
 
-        total_club_player = (
-            db.query(Clubs)
-            .filter(Clubs.show == True, Clubs.club_id == player.player_club)
-            .first()
-            .total_player
-        )
-        if total_club_player + 1 > MAX_CLUB_PLAYER:
-            return {"message": "Total player is larger than MAX_CLUB_PLAYER"}
+    # total_club_player = (
+    #     db.query(Clubs)
+    #     .filter(Clubs.show == True, Clubs.club_id == player.player_club)
+    #     .first()
+    #     .total_player
+    # )
+    # if total_club_player + 1 > MAX_CLUB_PLAYER:
+    #     return {"message": "Total player is larger than MAX_CLUB_PLAYER"}
+    club = (
+        db.query(Clubs)
+        .filter(Clubs.show == True, Clubs.club_id == player.player_club)
+        .first()
+    )
+    if not club:
+        return {"message": "Club not found"}
+    if club.total_player + 1 > MAX_CLUB_PLAYER:
+        return {"message": "Total player is larger than MAX_CLUB_PLAYER"}
 
-        db.add(new_db_player)
-        db.commit()
-        db.refresh(new_db_player)
-        return create_player_res(new_db_player)
+    db.add(new_db_player)
+    db.commit()
+    db.refresh(new_db_player)
 
-    except HTTPException as e:
-        db.rollback()
-        raise e
+    # Cập nhật total_player của câu lạc bộ
+    club.total_player += 1
+    db.commit()
+    db.refresh(club)
 
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+    return new_db_player
+
+    # except HTTPException as e:
+    #     db.rollback()
+    #     raise e
+
+    # except Exception as e:
+    #     db.rollback()
+    #     raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 
 @route.get("/get_players_by_name", response_model=List[PlayerShow])
@@ -248,18 +263,23 @@ async def delete_player(playerID: int, current_user: CurrentUser, db: db_deps):
             )
 
         if target.show == True:
-
-            total_club_player = (
+            club = (
                 db.query(Clubs)
                 .filter(Clubs.show == True, Clubs.club_id == target.player_club)
                 .first()
-                .total_player
             )
-            if total_club_player - 1 < MIN_CLUB_PLAYER:
+            if not club:
+                return {"message": "Club not found"}
+            if club.total_player - 1 > MIN_CLUB_PLAYER:
                 return {"message": "Total player is smaller than MIN_CLUB_PLAYER"}
 
             target.show = False
             db.commit()
+
+            club.total_player -= 1
+            db.commit()
+            db.refresh(club)
+
             return {"message": f"Deleted player with id:{playerID}"}
         else:
             return {"message": f"Can't find player with id:{playerID}. Maybe deleted."}
@@ -278,8 +298,23 @@ async def restore_deleted_player(
     try:
         target = db.query(Players).filter(Players.player_id == player_id).first()
         if target.show != True:
+            club = (
+                db.query(Clubs)
+                .filter(Clubs.show == True, Clubs.club_id == target.player_club)
+                .first()
+            )
+            if not club:
+                return {"message": "Club not found"}
+            if club.total_player + 1 > MAX_CLUB_PLAYER:
+                return {"message": "Total player is larger than MAX_CLUB_PLAYER"}
+
             target.show = True
             db.commit()
+
+            club.total_player += 1
+            db.commit()
+            db.refresh(club)
+
             return {"message": f"Restored player with id:{player_id}"}
         else:
             return {"message": f"Can't find player with id:{player_id}."}

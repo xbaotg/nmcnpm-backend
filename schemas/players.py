@@ -5,7 +5,7 @@ from datetime import date
 
 class PlayerCreate(BaseModel):
     player_name: str
-    player_bday: date
+    player_bday: int
     player_club: int
     player_pos: str
     player_nation: str
