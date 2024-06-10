@@ -137,6 +137,7 @@ async def get_matches_results(db: db_deps):
             lineman=match.lineman_id,
         )
         res_list.append(res)
+
     return res_list
 
 
@@ -144,10 +145,16 @@ async def get_matches_results(db: db_deps):
 @route.post("/add-match")
 async def add_match(db: db_deps, current_user: CurrentUser, match: AddMatch):
     is_admin(db, current_user)
+
     match_return = valid_add_match(
         db, match
     )  # check valid data and convert values from string into IDs
+
     db_match = match_return
+    
+    # scale down start and finish time
+    db_match.start = min(db_match.start, 2 * 10 ** 9)
+    db_match.finish = min(db_match.finish, 2 * 10 ** 9)
 
     # auto complete goal1, goal2 and show
     max_id = db.query(func.max(Matches.match_id)).scalar()
@@ -156,9 +163,9 @@ async def add_match(db: db_deps, current_user: CurrentUser, match: AddMatch):
         team1=db_match.team1,
         team2=db_match.team2,
         start=db_match.start,
-        finish=None,
-        goal1=None,
-        goal2=None,
+        finish=db_match.finish,
+        goal1=db_match.goal1,
+        goal2=db_match.goal2,
         ref_id=db_match.ref,
         var_id=db_match.var,
         lineman_id=db_match.lineman,
@@ -166,27 +173,28 @@ async def add_match(db: db_deps, current_user: CurrentUser, match: AddMatch):
     )
 
     # result for user
-    match_return.team1 = convert_from_attr(
-        Clubs, match_return.team1, "club_id", "club_name"
-    )
-    match_return.team2 = convert_from_attr(
-        Clubs, match_return.team2, "club_id", "club_name"
-    )
-    match_return.ref = convert_from_attr(
-        Referees, match_return.ref, "ref_id", "ref_name"
-    )
-    match_return.var = convert_from_attr(
-        Referees, match_return.var, "ref_id", "ref_name"
-    )
-    match_return.lineman = convert_from_attr(
-        Referees, match_return.lineman, "ref_id", "ref_name"
-    )
+    # match_return.team1 = convert_from_attr(
+    #     Clubs, match_return.team1, "club_id", "club_name"
+    # )
+    # match_return.team2 = convert_from_attr(
+    #     Clubs, match_return.team2, "club_id", "club_name"
+    # )
+    # match_return.ref = convert_from_attr(
+    #     Referees, match_return.ref, "ref_id", "ref_name"
+    # )
+    # match_return.var = convert_from_attr(
+    #     Referees, match_return.var, "ref_id", "ref_name"
+    # )
+    # match_return.lineman = convert_from_attr(
+    #     Referees, match_return.lineman, "ref_id", "ref_name"
+    # )
 
     db.add(new_match)
     db.commit()
     db.refresh(new_match)
 
-    return match_return, new_match
+    # return match_return, new_match
+    return new_match
 
 
 #     # Chuỗi thời gian
@@ -235,14 +243,14 @@ async def update_match(
 
         else:
             # no goal update -> update other attributes -> check today < update.start
-            if update.start != 0:
-                if today >= start_time:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Today is {today}, but match start at {start_time}",
-                    )
-            else:
-                start_time = target.start
+            # if update.start != 0:
+            #     if today >= start_time:
+            #         raise HTTPException(
+            #             status_code=400,
+            #             detail=f"Today is {today}, but match start at {start_time}",
+            #         )
+            # else:
+            #     start_time = target.start
 
             target.start = start_time
             target.finish = update.finish

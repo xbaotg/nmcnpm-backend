@@ -7,9 +7,12 @@ class AddMatch(BaseModel):
     team1: int
     team2: int
     start: int = datetime.now().timestamp()
+    finish: int = (datetime.now().timestamp() + timedelta(days=36500).total_seconds())
     # finish:
     # goal1: int -> new match -> goal = None
     # goal2: int
+    goal1: int = 0
+    goal2: int = 0
     ref: int
     var: int
     lineman: int

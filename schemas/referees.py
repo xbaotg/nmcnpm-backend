@@ -15,6 +15,7 @@ class RefShow(BaseModel):
     ref_bday: int
     ref_nation: str
     ref_mail: str
+    ref_id: int
 
 
 class RefUpdate(BaseModel):

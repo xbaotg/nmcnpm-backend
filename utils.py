@@ -284,14 +284,14 @@ def valid_add_match(
             status_code=400, detail="A team can only play 1 match per day !"
         )
 
-        # check today <= start_time
-    current = datetime_to_unix(datetime.now())
-    if current >= start_time:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid match start time: start on {start_time} but today is {current}",
-        )
-        return {"message": "Invalid match start time !"}
+    # check today <= start_time
+    # current = datetime_to_unix(datetime.now())
+    # if current >= start_time:
+    #     raise HTTPException(
+    #         status_code=400,
+    #         detail=f"Invalid match start time: start on {start_time} but today is {current}",
+    #     )
+    #     return {"message": "Invalid match start time !"}
 
     # check valid refs
     # convert name to id
