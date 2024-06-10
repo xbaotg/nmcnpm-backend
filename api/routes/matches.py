@@ -151,10 +151,10 @@ async def add_match(db: db_deps, current_user: CurrentUser, match: AddMatch):
     )  # check valid data and convert values from string into IDs
 
     db_match = match_return
-    
+
     # scale down start and finish time
-    db_match.start = min(db_match.start, 2 * 10 ** 9)
-    db_match.finish = min(db_match.finish, 2 * 10 ** 9)
+    db_match.start = min(db_match.start, 2 * 10**9)
+    db_match.finish = min(db_match.finish, 2 * 10**9)
 
     # auto complete goal1, goal2 and show
     max_id = db.query(func.max(Matches.match_id)).scalar()

@@ -120,13 +120,13 @@ class GoalTypes(Base):
 class Ranking(Base):
     __tablename__ = "ranking"
 
-    club_id = Column(Integer, ForeignKey("clubs.club_id") ,primary_key=True,  index = True)
-    away_goals = Column(Integer, index = True)
-    club_points = Column(Integer, index = True)
-    club_win = Column(Integer, index = True)
-    club_draw = Column(Integer, index = True)
-    club_lost = Column(Integer, index = True)
-    club_goals = Column(Integer, index = True)
-    club_gconcede = Column(Integer, index = True)
-    club_gdif = Column(Integer, index = True)
-    show = Column(Boolean, index = True)
+    club_id = Column(Integer, ForeignKey("clubs.club_id"), primary_key=True, index=True)
+    away_goals = Column(Integer, index=True)
+    club_points = Column(Integer, index=True)
+    club_win = Column(Integer, index=True)
+    club_draw = Column(Integer, index=True)
+    club_lost = Column(Integer, index=True)
+    club_goals = Column(Integer, index=True)
+    club_gconcede = Column(Integer, index=True)
+    club_gdif = Column(Integer, index=True)
+    show = Column(Boolean, index=True)
