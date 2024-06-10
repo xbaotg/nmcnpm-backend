@@ -409,7 +409,7 @@ def valid_update_match(db: db_deps, match: MatchUpdate, id: int):
     # checkt start time
     # if match.start == 0:
     #     match.start = target.start
-    
+
     if match.finish == 0:
         match.finish = target.finish
 

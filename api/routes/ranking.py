@@ -20,4 +20,3 @@ route = APIRouter()
 async def ranking_by_score(db: db_deps):
     print("hello")
     return "hello"
-

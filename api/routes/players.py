@@ -9,7 +9,7 @@ from core.db import db as code_db
 from core.db import db_deps
 from schemas.db import Clubs, Players, Users
 from schemas.players import PlayerCreate, PlayerShow, PlayerUpdate, Player_Add_With_Club
-from utils import is_valid_age
+from utils import is_valid_age, MIN_CLUB_PLAYER, MAX_CLUB_PLAYER 
 
 route = APIRouter()
 
@@ -95,6 +95,10 @@ async def add_players(
         newPlayerDict["player_id"] = (count or 0) + 1
         new_db_player = Players(**newPlayerDict)
 
+        total_club_player = db.query(Clubs).filter(Clubs.show == True, Clubs.club_id == player.player_club).first().total_player
+        if(total_club_player + 1 > MAX_CLUB_PLAYER):
+            return {"message": "Total player is larger than MAX_CLUB_PLAYER"}
+        
         db.add(new_db_player)
         db.commit()
         db.refresh(new_db_player)
