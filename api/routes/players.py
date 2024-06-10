@@ -13,6 +13,7 @@ from utils import is_valid_age, MIN_CLUB_PLAYER, MAX_CLUB_PLAYER
 
 route = APIRouter()
 
+
 def create_player_res(player):
     bday = None
     if player.player_bday is not None:
@@ -29,7 +30,6 @@ def create_player_res(player):
         js_number=player.js_number,
         ava_url=player.avatar_url,
     )
-
 
 
 def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
@@ -83,7 +83,7 @@ async def add_players(
             return {"message": "Player already existed !"}
 
     try:
-    # hasPermission = get_user_permission(current_user, db, "manager")
+        # hasPermission = get_user_permission(current_user, db, "manager")
         newPlayerDict = player.dict()
         for key, value in newPlayerDict.items():
             if value == "string":
@@ -94,7 +94,7 @@ async def add_players(
         count = db.query(func.max(Players.player_id)).scalar()
         newPlayerDict["player_id"] = (count or 0) + 1
         new_db_player = Players(**newPlayerDict)
-        
+
         club = (
             db.query(Clubs)
             .filter(Clubs.show == True, Clubs.club_id == player.player_club)

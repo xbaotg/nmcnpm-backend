@@ -307,5 +307,3 @@ async def update_ranking_values(db: db_deps):
         # update club_gdif (goals made - goals made by opponents)
         rank_club1.club_gdif = (rank_club1.club_gdif or 0) + match.goal1 - match.goal2
         rank_club2.club_gdif = (rank_club2.club_gdif or 0) + match.goal2 - match.goal1
-
-
