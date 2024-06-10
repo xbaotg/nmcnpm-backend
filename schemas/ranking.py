@@ -21,13 +21,14 @@ class InitRank(BaseModel):
 
 
 class Criteria(str, Enum):
-    by_points = "points"
-    by_goals = "goals"
-    by_away_goals = "away_goals"
-    by_gdif = "gdif"
-    by_win = "win"
-    by_draw = "draw"
-    by_lost = "lost"
+    club_points = "points"
+    club_goals = "goals"
+    away_goals = "away_goals"
+    club_gdif = "gdif"
+    club_win = "win"
+    club_draw = "draw"
+    club_lost = "lost"
+    none = "None"
 
 
 class RankingRes(BaseModel):
