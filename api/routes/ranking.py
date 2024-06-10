@@ -7,10 +7,8 @@ from sqlalchemy import func, or_, text
 from api.deps import CurrentUser, List
 from core.db import db_deps, Depends
 from schemas.db import Clubs, Players, Users, Params, Events, Matches, Ranking
-from schemas.ranking import InitRank
-from utils import (
-    get_params,
-)
+from schemas.ranking import InitRank, Criteria, RankingRes
+from utils import get_params, datetime_to_unix
 
 route = APIRouter()
 
@@ -21,6 +19,189 @@ idea sẽ là lặp qua tất cả các clubs, tạo 1 object với khóa là cl
 
 lặp qua all events, với mỗi event update các thông số cho 2 object tương ứng với 
 """
+
+
+def create_RankingRes(db: db_deps, r: Ranking):
+
+    # find next match
+    next_match = (
+        db.query(Matches)
+        .filter(
+            Matches.show == True,
+            or_(Matches.team1 == r.club_id, Matches.team2 == r.club_id),
+            Matches.start > datetime_to_unix(datetime.now()),
+        )
+        .order_by(Matches.start.asc())
+        .first()
+    )
+
+    if next_match:
+        next_match_id = next_match.match_id
+    else:
+        next_match_id = None
+
+    # find recent matches
+    recent_matches = []
+    recents = (
+        db.query(Matches)
+        .filter(
+            Matches.show == True,
+            or_(Matches.team1 == r.club_id, Matches.team2 == r.club_id),
+            Matches.start < datetime_to_unix(datetime.now()),
+        )
+        .order_by(Matches.start.desc())
+        .all()
+    )
+
+    for recent in recents:
+        if len(recent_matches) > 5:
+            break
+        recent_matches.append(recent.match_id)
+
+    # create return
+    res = RankingRes(
+        club_id=r.club_id,
+        away_goals=r.away_goals,
+        club_points=r.club_points,
+        club_win=r.club_win,
+        club_draw=r.club_draw,
+        club_lost=r.club_lost,
+        club_goals=r.club_goals,
+        club_gconcede=0,
+        club_gdif=r.club_gdif,
+        recent_matches=recent_matches,
+        next_match=next_match_id,
+        show=r.show,
+    )
+    return res
+
+
+@route.get("/ranking")
+async def ranking(db: db_deps, crit: Criteria, desc: bool = True):
+    if crit == "points":
+        if desc:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_points.desc())
+                .all()
+            )
+        else:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_points.asc())
+                .all()
+            )
+
+        res = []
+        for ranking in rankings:
+            res.append(create_RankingRes(db, ranking))
+
+        return res
+    if crit == "goals":
+        if desc:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_goals.desc())
+                .all()
+            )
+        else:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_goals.asc())
+                .all()
+            )
+
+        return rankings
+    if crit == "away_goals":
+        if desc:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.away_goals.desc())
+                .all()
+            )
+        else:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.away_goals.asc())
+                .all()
+            )
+
+        return rankings
+    if crit == "gdif":
+        if desc:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_gdif.desc())
+                .all()
+            )
+        else:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_gdif.asc())
+                .all()
+            )
+
+        return rankings
+    if crit == "win":
+        if desc:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_win.desc())
+                .all()
+            )
+        else:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_win.asc())
+                .all()
+            )
+
+        return rankings
+    if crit == "draw":
+        if desc:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_draw.desc())
+                .all()
+            )
+        else:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_draw.asc())
+                .all()
+            )
+
+        return rankings
+
+    if crit == "lost":
+        if desc:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_lost.desc())
+                .all()
+            )
+        else:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_lost.asc())
+                .all()
+            )
+
+        return rankings
 
 
 # INIT CLUBS TO RANK TABLE
@@ -59,6 +240,19 @@ async def update_ranking_values(db: db_deps):
     matches = (
         db.query(Matches).filter(Matches.show == True, Matches.finish != None).all()
     )
+
+    # reset all values before updating
+    rankings = db.query(Ranking).filter(Ranking.show == True).all()
+    for ranking in rankings:
+        ranking.away_goals = 0
+        ranking.club_points = 0
+        ranking.club_goals = 0
+        ranking.club_gdif = 0
+        ranking.club_win = 0
+        ranking.club_draw = 0
+        ranking.club_lost = 0
+
+    db.commit()
 
     # get params to calculate points
     params = get_params(Params, db)
@@ -115,199 +309,3 @@ async def update_ranking_values(db: db_deps):
         rank_club2.club_gdif = (rank_club2.club_gdif or 0) + match.goal2 - match.goal1
 
 
-# get ranking by club_scores
-@route.get("/ranking-by-points")
-async def rank_by_points(db: db_deps, desc: bool = True):
-    rankings = (
-        db.query(Ranking)
-        .filter(Ranking.show == True, Ranking.club_points == None)
-        .all()
-    )
-    for ranking in rankings:
-        ranking.club_points = 0
-
-    db.commit()
-    if desc:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_points.desc())
-            .all()
-        )
-    else:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_points.asc())
-            .all()
-        )
-
-    return rankings
-
-
-# get ranking by club_goals
-@route.get("/ranking-by-goals")
-async def rank_by_goals(db: db_deps, desc: bool = True):
-    rankings = (
-        db.query(Ranking).filter(Ranking.show == True, Ranking.club_goals == None).all()
-    )
-    for ranking in rankings:
-        ranking.club_goals = 0
-
-    db.commit()
-    if desc:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_goals.desc())
-            .all()
-        )
-    else:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_goals.asc())
-            .all()
-        )
-
-    return rankings
-
-
-# get ranking by away_goals
-@route.get("/ranking-by-away-goals")
-async def rank_by_away_goals(db: db_deps, desc: bool = True):
-    rankings = (
-        db.query(Ranking).filter(Ranking.show == True, Ranking.away_goals == None).all()
-    )
-    for ranking in rankings:
-        ranking.away_goals = 0
-
-    db.commit()
-    if desc:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.away_goals.desc())
-            .all()
-        )
-    else:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.away_goals.asc())
-            .all()
-        )
-
-    return rankings
-
-
-# get ranking by club_gdif
-@route.get("/ranking-by-goal-diff")
-async def rank_by_gdif(db: db_deps, desc: bool = True):
-    rankings = (
-        db.query(Ranking).filter(Ranking.show == True, Ranking.club_gdif == None).all()
-    )
-    for ranking in rankings:
-        ranking.club_gdif = 0
-
-    db.commit()
-    if desc:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_gdif.desc())
-            .all()
-        )
-    else:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_gdif.asc())
-            .all()
-        )
-
-    return rankings
-
-
-# get ranking by club_win
-@route.get("/ranking-by-wins")
-async def rank_by_club_win(db: db_deps, desc: bool = True):
-    rankings = (
-        db.query(Ranking).filter(Ranking.show == True, Ranking.club_win == None).all()
-    )
-    for ranking in rankings:
-        ranking.club_win = 0
-
-    db.commit()
-    if desc:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_win.desc())
-            .all()
-        )
-    else:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_win.asc())
-            .all()
-        )
-
-    return rankings
-
-
-# get ranking by club_draw
-@route.get("/ranking-by-draws")
-async def rank_by_club_draw(db: db_deps, desc: bool = True):
-    rankings = (
-        db.query(Ranking).filter(Ranking.show == True, Ranking.club_draw == None).all()
-    )
-    for ranking in rankings:
-        ranking.club_draw = 0
-
-    db.commit()
-    if desc:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_draw.desc())
-            .all()
-        )
-    else:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_draw.asc())
-            .all()
-        )
-
-    return rankings
-
-
-# get ranking by club_lost
-@route.get("/ranking-by-lost")
-async def rank_by_club_lost(db: db_deps, desc: bool = True):
-    rankings = (
-        db.query(Ranking).filter(Ranking.show == True, Ranking.club_lost == None).all()
-    )
-    for ranking in rankings:
-        ranking.club_lost = 0
-
-    db.commit()
-    if desc:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_lost.desc())
-            .all()
-        )
-    else:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_lost.asc())
-            .all()
-        )
-
-    return rankings
