@@ -213,7 +213,7 @@ async def init_rank(db: db_deps):
     for club in clubs:
         target = Ranking(
             club_id=club.club_id,
-            club_ranking=None,
+            # club_ranking=None,
             club_points=None,
             club_win=None,
             club_draw=None,
@@ -228,6 +228,7 @@ async def init_rank(db: db_deps):
 
     db.commit()
     ranks = db.query(Ranking).filter(Ranking.show == True).all()
+
     return ranks
 
 
@@ -307,5 +308,3 @@ async def update_ranking_values(db: db_deps):
         # update club_gdif (goals made - goals made by opponents)
         rank_club1.club_gdif = (rank_club1.club_gdif or 0) + match.goal1 - match.goal2
         rank_club2.club_gdif = (rank_club2.club_gdif or 0) + match.goal2 - match.goal1
-
-
