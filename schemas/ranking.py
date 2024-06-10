@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List, Annotated
 from datetime import date
+from enum import Enum
 
 
 class InitRank(BaseModel):
@@ -17,3 +18,12 @@ class InitRank(BaseModel):
 
     class Config:
         orm_mode = True
+
+class Criteria(str, Enum):
+    by_points = "points"
+    by_goals = "goals"
+    by_away_goals = "away_goals"
+    by_gdif = "gdif"
+    by_win = "win"
+    by_draw = "draw"
+    by_lost = "lost"

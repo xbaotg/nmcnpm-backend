@@ -7,7 +7,7 @@ from sqlalchemy import func, or_, text
 from api.deps import CurrentUser, List
 from core.db import db_deps, Depends
 from schemas.db import Clubs, Players, Users, Params, Events, Matches, Ranking
-from schemas.ranking import InitRank
+from schemas.ranking import InitRank, Criteria
 from utils import (
     get_params,
 )
@@ -115,199 +115,188 @@ async def update_ranking_values(db: db_deps):
         rank_club2.club_gdif = (rank_club2.club_gdif or 0) + match.goal2 - match.goal1
 
 
-# get ranking by club_scores
-@route.get("/ranking-by-points")
-async def rank_by_points(db: db_deps, desc: bool = True):
-    rankings = (
-        db.query(Ranking)
-        .filter(Ranking.show == True, Ranking.club_points == None)
-        .all()
-    )
-    for ranking in rankings:
-        ranking.club_points = 0
-
-    db.commit()
-    if desc:
+@route.get("/ranking")
+async def ranking(db: db_deps, crit: Criteria, desc: bool = True):
+    if crit == "points":
         rankings = (
             db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_points.desc())
+            .filter(Ranking.show == True, Ranking.club_points == None)
             .all()
         )
-    else:
+        for ranking in rankings:
+            ranking.club_points = 0
+
+        db.commit()
+        if desc:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_points.desc())
+                .all()
+            )
+        else:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_points.asc())
+                .all()
+            )
+
+        return rankings
+    if crit == "goals":
         rankings = (
             db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_points.asc())
+            .filter(Ranking.show == True, Ranking.club_goals == None)
             .all()
         )
+        for ranking in rankings:
+            ranking.club_goals = 0
 
-    return rankings
+        db.commit()
+        if desc:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_goals.desc())
+                .all()
+            )
+        else:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_goals.asc())
+                .all()
+            )
 
-
-# get ranking by club_goals
-@route.get("/ranking-by-goals")
-async def rank_by_goals(db: db_deps, desc: bool = True):
-    rankings = (
-        db.query(Ranking).filter(Ranking.show == True, Ranking.club_goals == None).all()
-    )
-    for ranking in rankings:
-        ranking.club_goals = 0
-
-    db.commit()
-    if desc:
+        return rankings
+    if crit == "away_goals":
         rankings = (
             db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_goals.desc())
+            .filter(Ranking.show == True, Ranking.away_goals == None)
             .all()
         )
-    else:
+        for ranking in rankings:
+            ranking.away_goals = 0
+
+        db.commit()
+        if desc:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.away_goals.desc())
+                .all()
+            )
+        else:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.away_goals.asc())
+                .all()
+            )
+
+        return rankings
+    if crit == "gdif":
         rankings = (
             db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_goals.asc())
+            .filter(Ranking.show == True, Ranking.club_gdif == None)
             .all()
         )
+        for ranking in rankings:
+            ranking.club_gdif = 0
 
-    return rankings
+        db.commit()
+        if desc:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_gdif.desc())
+                .all()
+            )
+        else:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_gdif.asc())
+                .all()
+            )
 
-
-# get ranking by away_goals
-@route.get("/ranking-by-away-goals")
-async def rank_by_away_goals(db: db_deps, desc: bool = True):
-    rankings = (
-        db.query(Ranking).filter(Ranking.show == True, Ranking.away_goals == None).all()
-    )
-    for ranking in rankings:
-        ranking.away_goals = 0
-
-    db.commit()
-    if desc:
+        return rankings
+    if crit == "win":
         rankings = (
             db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.away_goals.desc())
+            .filter(Ranking.show == True, Ranking.club_win == None)
             .all()
         )
-    else:
+        for ranking in rankings:
+            ranking.club_win = 0
+
+        db.commit()
+        if desc:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_win.desc())
+                .all()
+            )
+        else:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_win.asc())
+                .all()
+            )
+
+        return rankings
+    if crit == "draw":
         rankings = (
             db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.away_goals.asc())
+            .filter(Ranking.show == True, Ranking.club_draw == None)
             .all()
         )
+        for ranking in rankings:
+            ranking.club_draw = 0
 
-    return rankings
+        db.commit()
+        if desc:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_draw.desc())
+                .all()
+            )
+        else:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_draw.asc())
+                .all()
+            )
 
+        return rankings
 
-# get ranking by club_gdif
-@route.get("/ranking-by-goal-diff")
-async def rank_by_gdif(db: db_deps, desc: bool = True):
-    rankings = (
-        db.query(Ranking).filter(Ranking.show == True, Ranking.club_gdif == None).all()
-    )
-    for ranking in rankings:
-        ranking.club_gdif = 0
-
-    db.commit()
-    if desc:
+    if crit == "lost":
         rankings = (
             db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_gdif.desc())
+            .filter(Ranking.show == True, Ranking.club_lost == None)
             .all()
         )
-    else:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_gdif.asc())
-            .all()
-        )
+        for ranking in rankings:
+            ranking.club_lost = 0
 
-    return rankings
+        db.commit()
+        if desc:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_lost.desc())
+                .all()
+            )
+        else:
+            rankings = (
+                db.query(Ranking)
+                .filter(Ranking.show == True)
+                .order_by(Ranking.club_lost.asc())
+                .all()
+            )
 
-
-# get ranking by club_win
-@route.get("/ranking-by-wins")
-async def rank_by_club_win(db: db_deps, desc: bool = True):
-    rankings = (
-        db.query(Ranking).filter(Ranking.show == True, Ranking.club_win == None).all()
-    )
-    for ranking in rankings:
-        ranking.club_win = 0
-
-    db.commit()
-    if desc:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_win.desc())
-            .all()
-        )
-    else:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_win.asc())
-            .all()
-        )
-
-    return rankings
-
-
-# get ranking by club_draw
-@route.get("/ranking-by-draws")
-async def rank_by_club_draw(db: db_deps, desc: bool = True):
-    rankings = (
-        db.query(Ranking).filter(Ranking.show == True, Ranking.club_draw == None).all()
-    )
-    for ranking in rankings:
-        ranking.club_draw = 0
-
-    db.commit()
-    if desc:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_draw.desc())
-            .all()
-        )
-    else:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_draw.asc())
-            .all()
-        )
-
-    return rankings
-
-
-# get ranking by club_lost
-@route.get("/ranking-by-lost")
-async def rank_by_club_lost(db: db_deps, desc: bool = True):
-    rankings = (
-        db.query(Ranking).filter(Ranking.show == True, Ranking.club_lost == None).all()
-    )
-    for ranking in rankings:
-        ranking.club_lost = 0
-
-    db.commit()
-    if desc:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_lost.desc())
-            .all()
-        )
-    else:
-        rankings = (
-            db.query(Ranking)
-            .filter(Ranking.show == True)
-            .order_by(Ranking.club_lost.asc())
-            .all()
-        )
-
-    return rankings
+        return rankings
