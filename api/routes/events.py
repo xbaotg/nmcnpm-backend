@@ -31,7 +31,7 @@ async def get_events_of_matcH(db: db_deps, match_id: int):
     )
 
     if not events:
-        return {"message": "This match doesn't have any events!"}
+        return []
 
     return events
 

@@ -213,7 +213,6 @@ async def init_rank(db: db_deps):
     for club in clubs:
         target = Ranking(
             club_id=club.club_id,
-            # club_ranking=None,
             club_points=None,
             club_win=None,
             club_draw=None,

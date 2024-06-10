@@ -170,12 +170,13 @@ async def get_all_players_of_clubs(db: db_deps, club_name: str):
         .filter(Players.player_club == search_club.club_id, Players.show == True)
         .all()
     )
+
     if db_players:
         return db_players
     else:
         raise HTTPException(
             status_code=204,
-            detail=f"Can't find any players of club with id {club_id} !",
+            detail=f"Can't find any players of club with name {club_name} !",
         )
 
 

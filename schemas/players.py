@@ -21,7 +21,7 @@ class PlayerShow(BaseModel):
     player_nation: str
     js_number: int
     player_id: int
-    ava_url: str | None
+    avatar_url: str = ""
 
 
 class PlayerUpdate(BaseModel):

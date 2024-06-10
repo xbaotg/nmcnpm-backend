@@ -9,7 +9,7 @@ from fastapi import Depends
 
 class Database:
     def __init__(self, db_url: str):
-        self.engine = create_engine(db_url, pool_size=50)
+        self.engine = create_engine(db_url, pool_size=100)
         self.SessionLocal = sessionmaker(
             autocommit=False, autoflush=False, bind=self.engine
         )

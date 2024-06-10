@@ -176,8 +176,10 @@ async def get_players_by_club(club_name: str, db: db_deps, threshold: int = 80):
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
     res = []
+
     for player in matched_players:
         res.append(create_player_res(player))
+
     return res
 
 

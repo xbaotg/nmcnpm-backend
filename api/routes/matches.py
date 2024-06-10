@@ -34,7 +34,7 @@ async def get_matches(db: db_deps):
         now = datetime.now()
         now_unix = now.timestamp()
 
-        logger.info(f"now_unix: {now_unix} - match.start: {match.start}")
+        # logger.info(f"now_unix: {now_unix} - match.start: {match.start}")
 
         # if now_unix > match.start:
         #     goal1, goal2 = count_goals(db, match.match_id)
@@ -219,29 +219,31 @@ async def update_match(
         )
         .first()
     )
+
     if not target:
         raise HTTPException(status_code=400, detail=f"Can't find any match")
 
     # check if the input is valid
     update = valid_update_match(db, update, id)
+
     try:
         # today = datetime.now()
         # start_time = datetime.strptime(update.start, f"%H:%M %d/%m/%Y")
         today = datetime_to_unix(datetime.now())
         start_time = update.start
 
-        if update.goal1 != -1 and update.goal2 != -1:
-            # update goal -> no update time -> check today >= update.start
-            if not (today >= start_time):
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Can't update result for unfinished matches !",
-                )
+        # if update.goal1 != -1 and update.goal2 != -1:
+        #     # update goal -> no update time -> check today >= update.start
+        #     if not (today >= start_time):
+        #         raise HTTPException(
+        #             status_code=400,
+        #             detail=f"Can't update result for unfinished matches !",
+        #         )
 
-            target.goal1 = update.goal1
-            target.goal2 = update.goal2
+        #     target.goal1 = update.goal1
+        #     target.goal2 = update.goal2
 
-        else:
+        # else:
             # no goal update -> update other attributes -> check today < update.start
             # if update.start != 0:
             #     if today >= start_time:
@@ -252,15 +254,17 @@ async def update_match(
             # else:
             #     start_time = target.start
 
-            target.start = start_time
-            target.finish = update.finish
-            target.team1 = update.team1
-            target.team2 = update.team2
-            target.ref_id = update.ref
-            target.var_id = update.var
-            target.lineman_id = update.lineman
+        target.start = start_time
+        target.finish = update.finish
+        target.team1 = update.team1
+        target.team2 = update.team2
+        target.ref_id = update.ref
+        target.var_id = update.var
+        target.lineman_id = update.lineman
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Update error: {str(e)}")
+
     try:
         db.commit()
         db.refresh(target)
