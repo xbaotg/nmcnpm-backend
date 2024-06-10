@@ -251,6 +251,7 @@ async def update_ranking_values(db: db_deps):
         ranking.club_win = 0
         ranking.club_draw = 0
         ranking.club_lost = 0
+        ranking.club_gconcede = 0
 
     db.commit()
 
@@ -289,6 +290,10 @@ async def update_ranking_values(db: db_deps):
         else:  # team1 win - team2 lost
             rank_club1.club_win = (rank_club1.club_win or 0) + 1
             rank_club2.club_lost = (rank_club2.club_lost or 0) + 1
+        
+        # update gconcede
+        rank_club1.club_gconcede += match.goal2
+        rank_club2.club_gconcede += match.goal1
 
         db.commit()
 
@@ -307,3 +312,58 @@ async def update_ranking_values(db: db_deps):
         # update club_gdif (goals made - goals made by opponents)
         rank_club1.club_gdif = (rank_club1.club_gdif or 0) + match.goal1 - match.goal2
         rank_club2.club_gdif = (rank_club2.club_gdif or 0) + match.goal2 - match.goal1
+
+
+@route.get("/rank-with-priority")
+async def rank_with_priority(
+    db: db_deps,
+    crit1: Criteria, 
+    crit2: Criteria = Criteria.none, 
+    crit3: Criteria = Criteria.none, 
+    crit4: Criteria = Criteria.none,
+    crit5: Criteria = Criteria.none,
+    desc: bool = True 
+):
+    # create attributes names    
+    crit1 = (str(crit1).replace("Criteria.", ""))
+    crit2 = (str(crit2).replace("Criteria.", ""))
+    crit3 = (str(crit3).replace("Criteria.", ""))
+    crit4 = (str(crit4).replace("Criteria.", ""))
+    crit5 = (str(crit5).replace("Criteria.", ""))
+
+    if crit2 == "none":
+        crit2 = crit1
+    if crit3 == "none":
+        crit3 = crit1
+    if crit4 == "none":
+        crit4 = crit1
+    if crit5 == "none":
+        crit5 = crit1
+
+    
+
+    # query and order
+    query = db.query(Ranking).filter(Ranking.show == True)
+
+    if desc:
+        query = query.order_by(
+            getattr(Ranking, crit1).desc(),
+            getattr(Ranking, crit2).desc(),
+            getattr(Ranking, crit3).desc(),
+            getattr(Ranking, crit4).desc(),
+            getattr(Ranking, crit5).desc(),
+        )
+    else:
+        query = query.order_by(
+            getattr(Ranking, crit1),
+            getattr(Ranking, crit2),
+            getattr(Ranking, crit3),
+            getattr(Ranking, crit4),
+            getattr(Ranking, crit5),
+        )
+
+
+
+    results = query.all()
+
+    return results

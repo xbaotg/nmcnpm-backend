@@ -9,7 +9,7 @@ class UserCreateBase(BaseModel):
     user_name: str
     password: str
     user_nation: str
-    user_bday: date
+    user_bday: int
     user_mail: str
 
 
@@ -33,5 +33,5 @@ class UserUpdate(BaseModel):
     user_name: str | None
     password: str | None
     user_nation: str | None
-    user_bday: date | None
+    user_bday: int | None
     user_mail: str | None
