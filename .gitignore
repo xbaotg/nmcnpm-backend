@@ -6,3 +6,5 @@ nmcnpm-backend
 *.py[cod]
 **/pgdata
 **/.history
+
+.vscode
