@@ -82,12 +82,8 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
         db.query(Events)
         .filter(
             Events.show == True,
-            or_(
-                Events.match_id == event.match_id,
-                Events.player_id == event.player_id,
-                Events.seconds == event.seconds,
-            ),
-            or_(Events.seconds == event.seconds),
+            Events.match_id == event.match_id,
+            Events.seconds == event.seconds,
         )
         .first()
     )
