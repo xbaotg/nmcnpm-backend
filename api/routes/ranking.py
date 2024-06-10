@@ -290,7 +290,7 @@ async def update_ranking_values(db: db_deps):
         else:  # team1 win - team2 lost
             rank_club1.club_win = (rank_club1.club_win or 0) + 1
             rank_club2.club_lost = (rank_club2.club_lost or 0) + 1
-        
+
         # update gconcede
         rank_club1.club_gconcede += match.goal2
         rank_club2.club_gconcede += match.goal1
@@ -317,19 +317,19 @@ async def update_ranking_values(db: db_deps):
 @route.get("/rank-with-priority")
 async def rank_with_priority(
     db: db_deps,
-    crit1: Criteria, 
-    crit2: Criteria = Criteria.none, 
-    crit3: Criteria = Criteria.none, 
+    crit1: Criteria,
+    crit2: Criteria = Criteria.none,
+    crit3: Criteria = Criteria.none,
     crit4: Criteria = Criteria.none,
     crit5: Criteria = Criteria.none,
-    desc: bool = True 
+    desc: bool = True,
 ):
-    # create attributes names    
-    crit1 = (str(crit1).replace("Criteria.", ""))
-    crit2 = (str(crit2).replace("Criteria.", ""))
-    crit3 = (str(crit3).replace("Criteria.", ""))
-    crit4 = (str(crit4).replace("Criteria.", ""))
-    crit5 = (str(crit5).replace("Criteria.", ""))
+    # create attributes names
+    crit1 = str(crit1).replace("Criteria.", "")
+    crit2 = str(crit2).replace("Criteria.", "")
+    crit3 = str(crit3).replace("Criteria.", "")
+    crit4 = str(crit4).replace("Criteria.", "")
+    crit5 = str(crit5).replace("Criteria.", "")
 
     if crit2 == "none":
         crit2 = crit1
@@ -339,8 +339,6 @@ async def rank_with_priority(
         crit4 = crit1
     if crit5 == "none":
         crit5 = crit1
-
-    
 
     # query and order
     query = db.query(Ranking).filter(Ranking.show == True)
@@ -362,8 +360,111 @@ async def rank_with_priority(
             getattr(Ranking, crit5),
         )
 
-
-
     results = query.all()
+
+    return results
+
+
+# class Ranking(Base):
+#     __tablename__ = "ranking"
+
+#     club_id = Column(Integer, ForeignKey("clubs.club_id"), primary_key=True, index=True)
+#     away_goals = Column(Integer, index=True)
+#     club_points = Column(Integer, index=True)
+#     club_win = Column(Integer, index=True)
+#     club_draw = Column(Integer, index=True)
+#     club_lost = Column(Integer, index=True)
+#     club_goals = Column(Integer, index=True)
+#     club_gconcede = Column(Integer, index=True)
+#     club_gdif = Column(Integer, index=True)
+#     show = Column(Boolean, index=True)
+
+
+@route.get("/get")
+async def rank_baotg(db: db_deps):
+    priority = db.query(Params).first().priority.split(";")
+
+    matches = db.query(Matches).filter(Matches.show == True).all()
+    clubs = db.query(Clubs).filter(Clubs.show == True).all()
+    results = {}
+
+    for club in clubs:
+        results[club.club_id] = {
+            "club_id": club.club_id,
+            "away_goals": 0,
+            "club_points": 0,
+            "club_win": 0,
+            "club_draw": 0,
+            "club_lost": 0,
+            "club_goals": 0,
+            "club_gconcede": 0,
+            "club_gdif": 0,
+            "show": True,
+        }
+
+    for match in matches:
+        results[match.team1]["club_goals"] += match.goal1
+        results[match.team2]["club_goals"] += match.goal2
+        results[match.team2]["away_goals"] += match.goal2
+        results[match.team1]["club_gconcede"] += match.goal2
+        results[match.team2]["club_gconcede"] += match.goal1
+
+        if match.goal1 == match.goal2:
+            results[match.team1]["club_draw"] += 1
+            results[match.team2]["club_draw"] += 1
+        elif match.goal1 < match.goal2:
+            results[match.team1]["club_lost"] += 1
+            results[match.team2]["club_win"] += 1
+        else:
+            results[match.team1]["club_win"] += 1
+            results[match.team2]["club_lost"] += 1
+
+    for club in clubs:
+        results[club.club_id]["club_points"] = (
+            results[club.club_id]["club_win"] * 3 + results[club.club_id]["club_draw"]
+        )
+        results[club.club_id]["club_gdif"] = (
+            results[club.club_id]["club_goals"] - results[club.club_id]["club_gconcede"]
+        )
+
+    index = priority.index("h")
+
+    mapping_priority = {
+        "p": "club_points",
+        "d": "club_gdif",
+        "g": "club_goals",
+    }
+
+    first_priority = priority[:index]
+    second_priority = priority[index + 1 :]
+
+    results = sorted(
+        results.values(),
+        key=lambda x: tuple([x[mapping_priority[p]] for p in first_priority]),
+        reverse=True,
+    )
+
+    temp = []
+    groups = []
+
+    for i in range(len(results)):
+        if i == 0 or all(
+            results[i][mapping_priority[p]] == results[i - 1][mapping_priority[p]]
+            for p in first_priority
+        ):
+            temp.append(results[i])
+        else:
+            groups.append(temp)
+            temp = [results[i]]
+
+    # for each group, sort with second_priority
+    for group in groups:
+        group = sorted(
+            group,
+            key=lambda x: tuple([x[mapping_priority[p]] for p in second_priority]),
+            reverse=True,
+        )
+
+    results = [item for sublist in groups for item in sublist]
 
     return results

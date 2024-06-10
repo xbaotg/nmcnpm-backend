@@ -68,6 +68,7 @@ class Params(Base):
 
     max_goal_types = Column(Integer, index=True)
     max_goal_time = Column(Integer, index=True)
+    priority = Column(String, index=True)
 
 
 class Referees(Base):
