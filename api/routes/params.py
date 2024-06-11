@@ -51,6 +51,7 @@ def is_admin(db: db_deps, current_user: CurrentUser):
 async def show_params(db: db_deps, current_user: CurrentUser):
     is_admin(db, current_user)
     count_goal_types(db)
+
     try:
         params = db.query(Params).first()
         return params

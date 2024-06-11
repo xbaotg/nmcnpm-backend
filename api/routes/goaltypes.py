@@ -13,7 +13,7 @@ from utils import (
 route = APIRouter()
 
 
-@route.get("/")
+@route.get("/get")
 async def get_goal_types(db: db_deps, current_user: CurrentUser):
     is_admin(db, current_user)
 
@@ -76,7 +76,7 @@ async def delete_types(db: db_deps, current_user: CurrentUser, type_name: str):
     db.commit()
 
 
-@route.put("rename-type")
+@route.put("/rename-type")
 async def rename_type(
     db: db_deps, current_user: CurrentUser, type_name: str, new_name: str
 ):

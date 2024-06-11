@@ -21,6 +21,8 @@ class Show_Params(BaseModel):
 
     max_goal_types: int
     max_goal_time: int
+    
+    priority: str
 
     class Config:
         orm_mode = True
@@ -40,6 +42,7 @@ class Update_Params(BaseModel):
 
     # max_goal_types: int = params.max_goal_types -> config in another endpoint
     max_goal_time: int = params.max_goal_time
+    priority: str = params.priority
 
     class Config:
         orm_mode = True
