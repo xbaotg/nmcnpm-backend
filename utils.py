@@ -428,7 +428,7 @@ def check_event_time(db: db_deps, time: int):
     if time > params.max_goal_time:
         raise HTTPException(
             status_code=400,
-            detail=f"Max time for an event is {params.max_goal_time.strftime('%H:%M')}",
+            detail=f"Max time for an event is {params.max_goal_time}",
         )
 
     return True

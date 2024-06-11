@@ -437,7 +437,7 @@ async def rank_baotg(db: db_deps):
 
     first_priority = priority[:index]
     second_priority = priority[index + 1 :]
-    
+
     print(first_priority, second_priority)
 
     results = sorted(
