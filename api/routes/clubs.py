@@ -158,13 +158,20 @@ async def manager_get_club(db: db_deps, current_user: CurrentUser):
     user = db.query(Users).filter(Users.show==True, Users.user_id==current_user["user_id"]).first()
 
     manager_id = user.user_id
-    manager_club = db.query(Clubs).filter(Clubs.show == True, Clubs.manager == manager_id).first()
+    manager_club = db.query(Clubs).filter(Clubs.show == True, Clubs.manager == manager_id).all()
 
+    if not manager_club:
+        return {
+            "status": "success",
+            "message": "This user has no club",
+            "data": manager_club
+        }
     return {
         "status": "success",
-        "message": "Find club successful",
+        "message": "Find club successfully",
         "data": manager_club
     }
+    
 
 @route.get("/get-players-of-clubs/{club_name}")
 async def get_all_players_of_clubs(db: db_deps, club_name: str):
