@@ -33,7 +33,7 @@ async def add_types(db: db_deps, current_user: CurrentUser, new_type: str):
     )
     if dup.show == True:
         raise HTTPException(status_code=400, detail="Duplicated goal type!")
-    else if dup.show == False:
+    elif dup.show == False:
         dup.show = True
         db.commit()
         return dup
