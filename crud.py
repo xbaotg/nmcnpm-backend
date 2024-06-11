@@ -42,6 +42,9 @@ def create_user(db: db_deps, new_user: UserCreateBase) -> dict:
     duplicated_name = (
         db.query(Users).filter(Users.user_name == newUserdict["user_name"]).first()
     )
+    
+    print("duplicated_name", duplicated_name)
+
     if duplicated_name is not None:
         return {
             "status": "error",
@@ -49,6 +52,8 @@ def create_user(db: db_deps, new_user: UserCreateBase) -> dict:
         }
 
     for key, value in newUserdict.items():
+        print(key, value)
+
         if value == "string":  # check for missing values
             return {"status": "error", "message": f"{key} is required."}
 
@@ -64,6 +69,8 @@ def create_user(db: db_deps, new_user: UserCreateBase) -> dict:
     newUserdict["password"] = get_password_hash(newUserdict["password"])
     newUserdict["show"] = True
     newUserdict["user_id"] = 1 + (db.query(func.max(Users.user_id)).scalar() or 0)
+    
+    print(newUserdict)
 
     try:
         new_db_user = Users(**newUserdict)

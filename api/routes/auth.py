@@ -31,18 +31,20 @@ async def login_for_access_token(
             user.user_name, user.user_id, timedelta(minutes=1440)
         )
 
+        print(token, config.SECRET_KEY, config.ALGORITHM)
+
         # get expired date
         payload = jwt.decode(token, config.SECRET_KEY, algorithms=[config.ALGORITHM])
         expired_date = payload.get("exp")
 
         return {
-            "status": "success",
-            "message": "Token created successfully.",
-            "data": {
-                "access_token": token,
-                "token_type": "bearer",
-                "expired_date": expired_date,
-            },
+            # "status": "success",
+            # "message": "Token created successfully.",
+            # "data": {
+            "access_token": token,
+            "token_type": "bearer",
+            "expired_date": expired_date,
+            # },
         }
 
     except HTTPException as e:

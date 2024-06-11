@@ -11,8 +11,18 @@ from core.security import get_password_hash
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="api/v1/auth/token")
 
+# return {
+#     "status": "success",
+#     "message": "Token created successfully.",
+#     "data": {
+#         "access_token": token,
+#         "token_type": "bearer",
+#         "expired_date": expired_date,
+#     },
+# }
 
-def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
+
+def get_current_user(token: Annotated[dict, Depends(oauth2_bearer)]):
     try:
         payload = jwt.decode(token, config.SECRET_KEY, algorithms=[config.ALGORITHM])
         user_name: str = payload.get("sub")

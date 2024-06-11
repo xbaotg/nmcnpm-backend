@@ -74,6 +74,10 @@ async def create_user_route(
 
     try:
         user = create_user(db, new_user)
+        
+        if user['status'] == 'error':
+            return user
+
         return {
             "status": "success",
             "message": "User created successfully!",
