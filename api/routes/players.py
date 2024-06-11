@@ -5,7 +5,7 @@ from sqlalchemy import func
 from api.deps import CurrentUser, List
 from core.db import db as code_db
 from core.db import db_deps
-from schemas.db import Clubs, Players, Users
+from schemas.db import Clubs, Players, Users, Events
 from schemas.players import PlayerCreate, PlayerShow, PlayerUpdate, Player_Add_With_Club
 from utils import is_valid_age, MIN_CLUB_PLAYER, MAX_CLUB_PLAYER
 
@@ -32,6 +32,27 @@ def create_player_res(player):
         # },
     }
 
+def create_player_res_with_goals(db:db_deps, player):
+    bday = None
+    if player.player_bday is not None:
+        bday = player.player_bday
+    else:
+        bday = player.player_bday
+    total_goals = db.query(Events).filter(Events.show==True, Events.player_id==player.player_id).count()
+    return {
+        # "status": "success",
+        # "data": {
+        "player_id": player.player_id,
+        "player_name": player.player_name,
+        "player_bday": bday,
+        "player_club": player.player_club,
+        "player_pos": player.player_pos,
+        "player_nation": player.player_nation,
+        "js_number": player.js_number,
+        "total_goals": total_goals,
+        "ava_url": player.avatar_url,
+        # },
+    }
 
 def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
     if current_user is None:
@@ -188,7 +209,7 @@ async def get_players(
         if not matched_players:
             return {"status": "error", "message": "Cannot find players"}
 
-        res = [create_player_res(player) for player in matched_players]
+        res = [create_player_res_with_goals(db, player) for player in matched_players]
 
         return {"status": "success", "data": res}
 
@@ -212,7 +233,7 @@ async def update_player(
         db.commit()
         db.refresh(target)
 
-        return create_player_res(target)
+        return create_player_res_with_goals(target)
 
     except Exception as e:
         return {"status": "error", "message": f"Internal Server Error: {str(e)}!"}

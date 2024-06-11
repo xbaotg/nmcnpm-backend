@@ -113,7 +113,7 @@ async def update_params(
             .filter(
                 Players.show == True,
                 Players.player_club == club.club_id,
-                Players.player_nation != "VIE",
+                Players.player_nation != "England",
             )
             .count()
         )
