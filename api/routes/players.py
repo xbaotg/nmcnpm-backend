@@ -62,7 +62,7 @@ def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
     return True
 
 
-@route.post("/add_players")
+@route.post("/add-players")
 async def add_players(
     player: PlayerCreate, db: db_deps, current_user: CurrentUser
 ):  # current_user: CurrentUser):
@@ -125,7 +125,7 @@ async def add_players(
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 
-@route.get("/get_players_by_name", response_model=List[PlayerShow])
+@route.get("/get-players-by-name", response_model=List[PlayerShow])
 async def get_players_by_name(full_name: str, db: db_deps, threshold: int = 80):
     try:
         players = db.query(Players).filter(Players.show == True).all()
@@ -148,7 +148,7 @@ async def get_players_by_name(full_name: str, db: db_deps, threshold: int = 80):
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 
-@route.get("/get_players_by_club", response_model=List[PlayerShow])
+@route.get("/get-players-by-club", response_model=List[PlayerShow])
 async def get_players_by_club(club_name: str, db: db_deps, threshold: int = 80):
     try:
         active_club = db.query(Clubs).filter(Clubs.show == True).all()
@@ -183,7 +183,7 @@ async def get_players_by_club(club_name: str, db: db_deps, threshold: int = 80):
     return res
 
 
-@route.get("/get_players_by_pos", response_model=List[PlayerShow])
+@route.get("/get-players-by-pos", response_model=List[PlayerShow])
 async def get_players_by_pos(position: str, db: db_deps, threshold: int = 80):
     try:
         players = db.query(Players).filter(Players.show == True).all()
@@ -203,7 +203,7 @@ async def get_players_by_pos(position: str, db: db_deps, threshold: int = 80):
     return res
 
 
-@route.get("/get_players_by_nation", response_model=List[PlayerShow])
+@route.get("/get-players-by-nation", response_model=List[PlayerShow])
 async def get_players_by_nation(nation: str, db: db_deps, threshold: int = 80):
     try:
         players = db.query(Players).filter(Players.show == True).all()
@@ -223,7 +223,7 @@ async def get_players_by_nation(nation: str, db: db_deps, threshold: int = 80):
     return res
 
 
-@route.put("/update_player")
+@route.put("/update-player")
 async def update_player(
     playerID: int, player_update: PlayerUpdate, db: db_deps
 ):  # current_user: CurrentUser):
@@ -245,7 +245,7 @@ async def update_player(
     return create_player_res(target)
 
 
-@route.put("/delete_player")
+@route.put("/delete-player")
 async def delete_player(playerID: int, current_user: CurrentUser, db: db_deps):
     hasPermission = get_user_permission(db, current_user, "manager")
     try:
@@ -284,7 +284,7 @@ async def delete_player(playerID: int, current_user: CurrentUser, db: db_deps):
         )
 
 
-@route.put("/restore_deleted_player")
+@route.put("/restore-deleted-player")
 async def restore_deleted_player(
     player_id: int, current_user: CurrentUser, db: db_deps
 ):
@@ -318,7 +318,7 @@ async def restore_deleted_player(
         )
 
 
-@route.delete("/permanently_delete_player")
+@route.delete("/permanently-delete-player")
 async def permanently_delete_player(
     player_id: int, db: db_deps, current_user: CurrentUser
 ):
