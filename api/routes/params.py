@@ -31,7 +31,10 @@ def count_goal_types(db: db_deps):
 
 def is_admin(db: db_deps, current_user: CurrentUser):
     if current_user is None:
-        raise HTTPException(status_code=401, detail="Authentication Failed")
+        raise HTTPException(
+            status_code=401,
+            detail={"status": "error", "message": "Authentication Failed"},
+        )
 
     user_role = (
         db.query(Users).filter(Users.user_id == current_user["user_id"]).first().role  # type: ignore
@@ -40,23 +43,34 @@ def is_admin(db: db_deps, current_user: CurrentUser):
     # check permission of user_role
     if user_role != "admin":
         raise HTTPException(
-            status_code=401, detail="You don't have permission to do this action!"
+            status_code=401,
+            detail={
+                "status": "error",
+                "message": "You don't have permission to do this action!",
+            },
         )
 
     return True
 
 
 # GET
-@route.get("/show-params/", response_model=Show_Params)
+@route.get("/show-params/")
 async def show_params(db: db_deps, current_user: CurrentUser):
     is_admin(db, current_user)
     count_goal_types(db)
 
     try:
         params = db.query(Params).first()
-        return params
+        return {
+            "status": "success",
+            "message": "Parameters retrieved successfully",
+            "data": params,
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail={"status": "error", "message": f"Internal Server Error: {str(e)}"},
+        )
 
 
 # UPDATE
@@ -69,7 +83,10 @@ async def update_params(
     try:
         params = db.query(Params).first()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail={"status": "error", "message": f"Internal Server Error: {str(e)}"},
+        )
 
     # CHECK IF THERE'S CONFLICT DATA
     # check club's player num (good to use)
@@ -82,6 +99,7 @@ async def update_params(
         )
         if count < new_info.min_club_player or count > new_info.max_club_player:
             response_info = {
+                "status": "error",
                 "message": "There's conflict data with new MIN/MAX players of a club, please change it first !",
                 "New MAX PLAYERS": new_info.max_club_player,
                 "New MIN PLAYERS": new_info.min_club_player,
@@ -101,6 +119,7 @@ async def update_params(
         )
         if count > new_info.max_foreign_player:
             response_info = {
+                "status": "error",
                 "message": "There's conflict data with new MIN/MAX foreign players of a club, please change it first !",
                 "new max foreign players": new_info.max_foreign_player,
                 "conflict": count,
@@ -109,7 +128,10 @@ async def update_params(
 
         # check player age (Done)
     if new_info.max_player_age < new_info.min_player_age:
-        raise HTTPException(status_code=400, detail="MAX AGE must higher than MIN AGE")
+        raise HTTPException(
+            status_code=400,
+            detail={"status": "error", "message": "MAX AGE must higher than MIN AGE"},
+        )
     db_players = db.query(Players).filter(Players.show == True).all()
     for player in db_players:
         if not is_valid_age(
@@ -121,6 +143,7 @@ async def update_params(
         ):
             conflict = count_age(player.player_bday)
             response_info = {
+                "status": "error",
                 "message": "There's conflict data with new MIN/MAX player age, please change it first !",
                 "New min age": new_info.min_player_age,
                 "New max age": new_info.max_player_age,
@@ -133,6 +156,7 @@ async def update_params(
     for event in db_events:
         if event.seconds > new_info.max_goal_time:
             response_info = {
+                "status": "error",
                 "message": "There's conflict data with MAX GOAL TIME, please change it first!",
                 "New MAX GOAL TIME": new_info.max_goal_time,
                 "Conflict": event.seconds,
@@ -146,7 +170,10 @@ async def update_params(
     ):
         raise HTTPException(
             status_code=409,
-            detail="Points must be: points win > points draw > points lose",
+            detail={
+                "status": "error",
+                "message": "Points must be: points win > points draw > points lose",
+            },
         )
 
     # update info
@@ -158,7 +185,11 @@ async def update_params(
 
     db.refresh(params)
 
-    return {"message": "Update parameters successfully"}, params
+    return {
+        "status": "success",
+        "message": "Update parameters successfully",
+        "data": params,
+    }
 
 
 @route.post("/add-goal-type")
@@ -171,7 +202,10 @@ async def add_goal_type(db: db_deps, current_user: CurrentUser, new_goal_type: s
     )
 
     if duplicated:
-        raise HTTPException(status_code=406, detail="Type name already existed !")
+        raise HTTPException(
+            status_code=406,
+            detail={"status": "error", "message": "Type name already existed!"},
+        )
 
     type_id = (1 + (db.query(func.max(GoalTypes.type_id)).scalar() or 0),)
     sql_command = text(
@@ -186,13 +220,15 @@ async def add_goal_type(db: db_deps, current_user: CurrentUser, new_goal_type: s
         )
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(
+            status_code=400, detail={"status": "error", "message": str(e)}
+        )
 
     db.commit()
     # Update max_goal_types
     count_goal_types(db)
 
-    return {"message": "Goal type added successfully"}
+    return {"status": "success", "message": "Goal type added successfully"}
 
 
 @route.post("/delete-goal-type")
@@ -205,7 +241,10 @@ async def delete_goal_type(db: db_deps, current_user: CurrentUser, type_id: int)
     )
 
     if not target:
-        raise HTTPException(status_code=204, detail="Can't find goal type!")
+        raise HTTPException(
+            status_code=204,
+            detail={"status": "error", "message": "Can't find goal type!"},
+        )
 
     # if any event has this goal type
     conflict = (
@@ -216,25 +255,13 @@ async def delete_goal_type(db: db_deps, current_user: CurrentUser, type_id: int)
     if conflict:
         raise HTTPException(
             status_code=409,
-            detail="There're events that has this goal type, can't delete",
+            detail={
+                "status": "error",
+                "message": "There're events that have this goal type, can't delete",
+            },
         )
     target.show = False
     db.commit()
     db.refresh(target)
 
-    return {"message": "Delete type successfully"}
-
-
-# default values
-# {
-#   "min_player_age": 16,
-#   "max_player_age": 40,
-#   "min_club_player": 15,
-#   "max_club_player": 22,
-#   "max_foreign_player": 3,
-#   "points_win": 2,
-#   "points_draw": 1,
-#   "points_lose": 0,
-#   "max_goal_types": 3,
-#   "max_goal_time": "01:30:00"
-# }
+    return {"status": "success", "message": "Delete type successfully"}

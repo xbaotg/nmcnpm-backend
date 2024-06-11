@@ -10,51 +10,57 @@ from sqlalchemy import func
 from api.deps import List, CurrentUser, get_password_hash, fuzz
 from utils import unix_to_date, date_to_unix
 
-
 route = APIRouter()
 
 
 def create_user_res(user):
-    # bday = datetime.combine(user.user_bday, datetime.min.time())
-    res = UserReg(
-        user_id=user.user_id,
-        full_name=user.full_name,
-        role=user.role,
-        user_name=user.user_name,
-        user_mail=user.user_mail,
-        user_nation=user.user_nation,
-        # user_bday = int(bday.timestamp()),
-        user_bday=user.user_bday,
-        show=user.show,
-    )
+    res = {
+        "user_id": user.user_id,
+        "full_name": user.full_name,
+        "role": user.role,
+        "user_name": user.user_name,
+        "user_mail": user.user_mail,
+        "user_nation": user.user_nation,
+        "user_bday": user.user_bday,
+        "show": user.show,
+    }
     return res
 
 
 def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
     if current_user is None:
-        raise HTTPException(status_code=401, detail="Authentication Failed")
+        raise HTTPException(
+            status_code=401,
+            detail={"status": "error", "message": "Authentication Failed"},
+        )
 
     user_role = (
-        db.query(Users).filter(Users.user_id == current_user["user_id"]).first().role  # type: ignore
+        db.query(Users).filter(Users.user_id == current_user["user_id"]).first().role
     )
 
-    # check permission of user_role
     if role == "manager":
-        # check if user is deleted or not
         if (
             not db.query(Users)
             .filter(Users.user_id == current_user["user_id"])
             .first()
-            .show  # type: ignore
+            .show
         ):
             raise HTTPException(
-                status_code=401, detail="Your account is no longer active!"
+                status_code=401,
+                detail={
+                    "status": "error",
+                    "message": "Your account is no longer active!",
+                },
             )
 
         return True
     elif role == "admin" and user_role != role:
         raise HTTPException(
-            status_code=401, detail="You don't have permission to do this action!"
+            status_code=401,
+            detail={
+                "status": "error",
+                "message": "You don't have permission to do this action!",
+            },
         )
 
     return True
@@ -65,72 +71,62 @@ async def create_user_route(
     db: db_deps, current_user: CurrentUser, new_user: UserCreateBase
 ):
     hasPermission = get_user_permission(db, current_user, "admin")
-    # check valid username in crud.create_user
 
-    return create_user(db, new_user)
+    try:
+        user = create_user(db, new_user)
+        return {
+            "status": "success",
+            "message": "User created successfully!",
+            "data": user,
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
-# GET ALL USERS
-
-
-@route.get("/", response_model=List[UserReg])
+@route.get("/")
 async def get_all_users(current_user: CurrentUser, db: db_deps):
     try:
         hasPermission = get_user_permission(db, current_user, "admin")
         db_users = db.query(Users).all()
 
-        res = []
-        for user in db_users:
-            res.append(create_user_res(user))
-
-        return res
+        res = [create_user_res(user) for user in db_users]
+        return {"status": "success", "data": res}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        return {"status": "error", "message": f"Internal server error: {str(e)}"}
 
 
-@route.get("/me", response_model=UserReg)
+@route.get("/me")
 async def get_user_info(current_user: CurrentUser, db: db_deps):
     try:
         res = get_info_user(db, current_user)
-        return res
-        # return UserReg(**res.__dict__)
+        return {"status": "success", "data": res}
+
     except Exception as e:
-        raise e
+        return {"status": "error", "message": str(e)}
 
 
-# GET existing users (not deleted)  **admin only
-@route.get("/get-activated-users", response_model=List[UserReg])
-async def get_all_users(current_user: CurrentUser, db: db_deps):
+# GET existing users (not deleted)
+@route.get("/get-activated-users")
+async def get_activated_users(current_user: CurrentUser, db: db_deps):
     hasPermission = get_user_permission(db, current_user, "admin")
 
     db_users = db.query(Users).filter(Users.show == True).all()
     if db_users == None:
-        raise HTTPException(status_code=204, detail="Cant find users")
-    res = []
-    for user in db_users:
-        res.append(create_user_res(user))
-
-    return res
+        return {"status": "error", "message": "Can't find users"}
+    res = [create_user_res(user) for user in db_users]
+    return {"status": "success", "data": res}
 
 
 # GET deleted users
-
-
-@route.get("/get-inactivated-users", response_model=List[UserReg])
-async def get_all_users(current_user: CurrentUser, db: db_deps):
+@route.get("/get-inactivated-users")
+async def get_inactivated_users(current_user: CurrentUser, db: db_deps):
     hasPermission = get_user_permission(db, current_user, "admin")
 
     db_users = db.query(Users).filter(Users.show == False).all()
     if db_users == None:
-        raise HTTPException(status_code=204, detail="Cant find users")
-    res = []
-    for user in db_users:
-        res.append(create_user_res(user))
-
-    return res
-
-
-# GET user by name
+        return {"status": "error", "message": "Can't find users"}
+    res = [create_user_res(user) for user in db_users]
+    return {"status": "success", "data": res}
 
 
 # DELETE users (using put like update)
@@ -141,44 +137,45 @@ async def delete_user(target_user_id: int, current_user: CurrentUser, db: db_dep
         db_user = db.query(Users).filter(Users.user_id == target_user_id).first()
 
         if db_user is None:
-            raise HTTPException(
-                status_code=404, detail="Can't find user with id:{target_user_id}"
-            )
+            return {
+                "status": "error",
+                "message": f"Can't find user with id: {target_user_id}",
+            }
 
         if db_user.show == True:
             db_user.show = False
             db.commit()
-            return {"message": f"Deleted user with id:{target_user_id}"}
+            return {
+                "status": "success",
+                "message": f"Deleted user with id: {target_user_id}",
+            }
         else:
             return {
-                "message": f"Can't find user with id:{target_user_id}. Maybe deleted."
+                "status": "error",
+                "message": f"Can't find user with id: {target_user_id}. Maybe deleted.",
             }
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Internal Server Error: {str(e)} !"
-        )
+        return {"status": "error", "message": f"Internal Server Error: {str(e)}"}
 
 
 # Restore deleted users
 @route.put("/restore-deleted-user/{user_id}")
-async def delete_user(user_id: int, current_user: CurrentUser, db: db_deps):
+async def restore_deleted_user(user_id: int, current_user: CurrentUser, db: db_deps):
     hasPermission = get_user_permission(db, current_user, "admin")
     try:
         db_user = db.query(Users).filter(Users.user_id == user_id).first()
         if db_user.show != True:
             db_user.show = True
             db.commit()
-            return {"message": f"Restored user with id:{user_id}"}
+            return {"status": "success", "message": f"Restored user with id: {user_id}"}
         else:
-            return {"message": f"Can't find user with id:{user_id}."}
+            return {"status": "error", "message": f"Can't find user with id: {user_id}"}
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Internal Server Error: {str(e)} !"
-        )
+        return {"status": "error", "message": f"Internal Server Error: {str(e)}"}
 
 
-# Permamently delete user
+# Permanently delete user
 @route.delete("/permanently-delete/{user_id}")
 async def permanently_delete_user(user_id: int, db: db_deps, current_user: CurrentUser):
     hasPermission = get_user_permission(db, current_user, "admin")
@@ -187,11 +184,14 @@ async def permanently_delete_user(user_id: int, db: db_deps, current_user: Curre
 
     db.delete(target)
     db.commit()
-    return {"message": f"Delete user with id {user_id} successfully !"}
+    return {
+        "status": "success",
+        "message": f"Delete user with id {user_id} successfully !",
+    }
 
 
 # Update users
-@route.put("/update-user-info/{user_id}", response_model=UserUpdate | dict)
+@route.put("/update-user-info/{user_id}")
 async def update_user_info(
     user_id: int, new_info: UserUpdate, current_user: CurrentUser, db: db_deps
 ):
@@ -201,7 +201,7 @@ async def update_user_info(
 
         update_info = new_info.dict(exclude_unset=True)
 
-        for key, value in update_info.items():  #
+        for key, value in update_info.items():
             if value == "string":
                 continue
             if key == "user_bday":
@@ -214,23 +214,23 @@ async def update_user_info(
         db.commit()
         db.refresh(target)
 
-        return UserUpdate(
-            full_name=target.full_name,
-            role=target.role,
-            user_name=target.user_name,
-            password=new_info.password,
-            user_nation=target.user_nation,
-            user_bday=(target.user_bday),
-            user_mail=target.user_mail,
-        )
-        return {"message": "Update successfully!"}
+        return {
+            "status": "success",
+            "data": {
+                "full_name": target.full_name,
+                "role": target.role,
+                "user_name": target.user_name,
+                "password": new_info.password,
+                "user_nation": target.user_nation,
+                "user_bday": target.user_bday,
+                "user_mail": target.user_mail,
+            },
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}!")
+        return {"status": "error", "message": f"Internal Server Error: {str(e)}"}
 
 
 # SEARCH
-
-
 # search by name
 @route.get("/search-by-name")
 async def search_user_by_name(
@@ -245,19 +245,20 @@ async def search_user_by_name(
             >= threshold
         )
         if not matched_users:
-            return {"message": f"Can't find any users match the name: {full_name}"}
+            return {
+                "status": "error",
+                "message": f"Can't find any users match the name: {full_name}",
+            }
 
-        res = []
-        for user in matched_users:
-            res.append(create_user_res(user))
-        return res
+        res = [create_user_res(user) for user in matched_users]
+        return {"status": "success", "data": res}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+        return {"status": "error", "message": f"Internal Server Error: {str(e)}"}
 
 
-# search by natio
+# search by nation
 @route.get("/search-by-nation")
-async def search_user_by_name(
+async def search_user_by_nation(
     nation: str, db: db_deps, current_user: CurrentUser, threshold: int = 80
 ):
     try:
@@ -268,10 +269,11 @@ async def search_user_by_name(
             if fuzz.partial_ratio(user.user_nation.lower(), nation.lower()) >= threshold
         )
         if not matched_users:
-            return {"message": f"Can't find any users match the nation: {nation}"}
-        res = []
-        for user in matched_users:
-            res.append(create_user_res(user))
-        return res
+            return {
+                "status": "error",
+                "message": f"Can't find any users match the nation: {nation}",
+            }
+        res = [create_user_res(user) for user in matched_users]
+        return {"status": "success", "data": res}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+        return {"status": "error", "message": f"Internal Server Error: {str(e)}"}

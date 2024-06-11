@@ -12,11 +12,10 @@ from fastapi.security import OAuth2PasswordRequestForm
 from schemas.auth import Token
 from starlette import status
 
-
 router = APIRouter()
 
 
-@router.post("/token", response_model=Token | dict)
+@router.post("/token")
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_deps
 ):
@@ -24,10 +23,7 @@ async def login_for_access_token(
         user = authenticate_user(form_data.username, form_data.password, db)
 
         if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="INCORRECT USERNAME OR PASSWORD.",
-            )
+            return {"status": "error", "message": "Incorrect username or password."}
 
         token = create_access_token(
             user.user_name, user.user_id, timedelta(minutes=1440)
@@ -38,18 +34,18 @@ async def login_for_access_token(
         expired_date = payload.get("exp")
 
         return {
-            "access_token": token,
-            "token_type": "bearer",
-            "expired_date": expired_date,
+            "status": "success",
+            "message": "Token created successfully.",
+            "data": {
+                "access_token": token,
+                "token_type": "bearer",
+                "expired_date": expired_date,
+            },
         }
 
     except HTTPException as e:
-        raise e
+        return {"status": "error", "message": str(e.detail)}
 
     except Exception as e:
         print(f"My bad: {str(e)}")
-
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="INTERNAL SERVER ERROR.",
-        )
+        return {"status": "error", "message": "Internal Server Error."}

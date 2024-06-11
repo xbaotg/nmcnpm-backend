@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import func, or_
+from sqlalchemy.orm import Session
 
 from api.deps import CurrentUser
-from core.db import db_deps, Depends
+from core.db import db_deps
 from schemas.db import Clubs, Players, Users, Params, Matches, Events, GoalTypes
 from schemas.events import EventAdd, EventUpdate
 
@@ -21,23 +22,39 @@ route = APIRouter()
 @route.get("/")
 async def default(db: db_deps):
     db_events = db.query(Events).filter(Events.show == True).all()
-    return db_events
+    return {
+        "status": "success",
+        "message": "Events retrieved successfully",
+        "data": db_events,
+    }
 
 
 @route.get("/get-events-of-match")
-async def get_events_of_matcH(db: db_deps, match_id: int):
+async def get_events_of_match(db: db_deps, match_id: int):
     events = (
         db.query(Events).filter(Events.show == True, Events.match_id == match_id).all()
     )
 
     if not events:
-        return []
+        return {
+            "status": "success",
+            "message": "No events found for this match",
+            "data": [],
+        }
 
-    return events
+    return {
+        "status": "success",
+        "message": "Events retrieved successfully",
+        "data": events,
+    }
 
 
 @route.post("/add")
-async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
+async def add_event(
+    db: db_deps,
+    current_user: CurrentUser,
+    event: EventAdd,
+):
     is_admin(db, current_user)
 
     match = (
@@ -47,7 +64,10 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
     )
 
     if not match:
-        raise HTTPException(status_code=400, detail="Can't find match!")
+        return {
+            "status": "error",
+            "message": "Can't find match!",
+        }
 
     # check valid player
     player = (
@@ -61,13 +81,17 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
     )
 
     if not player:
-        raise HTTPException(status_code=400, detail="Can't find player!")
+        return {
+            "status": "error",
+            "message": "Can't find player!",
+        }
 
     # Check team_id == player.player_club
     if not (event.team_id == player.player_club):
-        raise HTTPException(
-            status_code=400, detail="The player is not in this team ID!"
-        )
+        return {
+            "status": "error",
+            "message": "The player is not in this team ID!",
+        }
 
     check_event_time(db, event.seconds)
 
@@ -75,7 +99,10 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
         GoalTypes, event.events, "type_name", "type_id", True
     )
     if not event_name:
-        raise HTTPException(status_code=400, detail="Invalid event name!")
+        return {
+            "status": "error",
+            "message": "Invalid event name!",
+        }
 
     # check duplicate
     dup = (
@@ -89,7 +116,10 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
     )
 
     if dup:
-        raise HTTPException(status_code=400, detail=f"Duplicated event!")
+        return {
+            "status": "error",
+            "message": "Duplicated event!",
+        }
 
     # if no conflict -> add
     new_event = Events(
@@ -109,12 +139,20 @@ async def add_event(db: db_deps, current_user: CurrentUser, event: EventAdd):
     # update match
     update_match(db, match.match_id)
 
-    return {"message": "Add event successfully!"}, new_event
+    return {
+        "status": "success",
+        "message": "Add event successfully!",
+        "data": new_event,
+    }
 
 
 # update
 @route.put("/update")
-def update_event(db: db_deps, current_user: CurrentUser, event: EventUpdate):
+def update_event(
+    db: db_deps,
+    current_user: CurrentUser,
+    event: EventUpdate,
+):
     is_admin(db, current_user)
 
     target = (
@@ -127,7 +165,10 @@ def update_event(db: db_deps, current_user: CurrentUser, event: EventUpdate):
     )
 
     if not target:
-        return {"message": "Can't find event"}
+        return {
+            "status": "error",
+            "message": "Can't find event",
+        }
 
     match = (
         db.query(Matches)
@@ -136,7 +177,10 @@ def update_event(db: db_deps, current_user: CurrentUser, event: EventUpdate):
     )
 
     if not match:
-        raise HTTPException(status_code=400, detail="Can't find match!")
+        return {
+            "status": "error",
+            "message": "Can't find match!",
+        }
 
     # check valid player
     player = (
@@ -150,13 +194,17 @@ def update_event(db: db_deps, current_user: CurrentUser, event: EventUpdate):
     )
 
     if not player:
-        raise HTTPException(status_code=400, detail="Can't find player!")
+        return {
+            "status": "error",
+            "message": "Can't find player!",
+        }
 
     # Check team_id == player.player_club
     if not (event.team_id == player.player_club):
-        raise HTTPException(
-            status_code=400, detail="The player is not in this team ID!"
-        )
+        return {
+            "status": "error",
+            "message": "The player is not in this team ID!",
+        }
 
     check_event_time(db, event.seconds)
 
@@ -165,7 +213,10 @@ def update_event(db: db_deps, current_user: CurrentUser, event: EventUpdate):
     )
 
     if not event_name:
-        raise HTTPException(status_code=400, detail="Invalid event name!")
+        return {
+            "status": "error",
+            "message": "Invalid event name!",
+        }
 
     # check duplicate
     target.match_id = event.match_id
@@ -180,13 +231,22 @@ def update_event(db: db_deps, current_user: CurrentUser, event: EventUpdate):
     # update match
     update_match(db, match.match_id)
 
-    return {"message": "Updated successfully"}, target
+    return {
+        "status": "success",
+        "message": "Updated successfully",
+        "data": target,
+    }
 
 
 # DELETE
 @route.put("/delete")
-async def delete_event(db: db_deps, current_user: CurrentUser, event_id: int):
+async def delete_event(
+    db: db_deps,
+    current_user: CurrentUser,
+    event_id: int,
+):
     is_admin(db, current_user)
+
     target = (
         db.query(Events)
         .filter(
@@ -196,7 +256,10 @@ async def delete_event(db: db_deps, current_user: CurrentUser, event_id: int):
         .first()
     )
     if not target:
-        return {"message": "Can't find event"}
+        return {
+            "status": "error",
+            "message": "Can't find event",
+        }
 
     target.show = False
 
@@ -206,12 +269,20 @@ async def delete_event(db: db_deps, current_user: CurrentUser, event_id: int):
     # update match
     update_match(db, target.match_id)
 
-    return {"message": "Deleted successfully"}, target
+    return {
+        "status": "success",
+        "message": "Deleted successfully",
+        "data": target,
+    }
 
 
 # DELETE from DATABASE
 @route.put("/delete-permanently")
-async def delete_event(db: db_deps, current_user: CurrentUser, event_id: int):
+async def delete_event_permanently(
+    db: db_deps,
+    current_user: CurrentUser,
+    event_id: int,
+):
     is_admin(db, current_user)
     target = (
         db.query(Events)
@@ -219,15 +290,26 @@ async def delete_event(db: db_deps, current_user: CurrentUser, event_id: int):
         .first()
     )
     if not target:
-        return {"message": "Can't find event"}
+        return {
+            "status": "error",
+            "message": "Can't find event",
+        }
 
     db.delete(target)
     db.commit()
-    return {"message": "Deleted successfully"}, target
+    return {
+        "status": "success",
+        "message": "Deleted permanently successfully",
+        "data": target,
+    }
 
 
 @route.put("/restore")
-async def restore_event(db: db_deps, current_user: CurrentUser, event_id: int):
+async def restore_event(
+    db: db_deps,
+    current_user: CurrentUser,
+    event_id: int,
+):
     is_admin(db, current_user)
     target = (
         db.query(Events)
@@ -238,17 +320,32 @@ async def restore_event(db: db_deps, current_user: CurrentUser, event_id: int):
         .first()
     )
     if not target:
-        return {"message": "Can't find event"}
+        return {
+            "status": "error",
+            "message": "Can't find event",
+        }
 
     target.show = True
 
     db.commit()
     db.refresh(target)
-    return {"message": "Restored successfully"}
+    return {
+        "status": "success",
+        "message": "Restored successfully",
+        "data": target,
+    }
 
 
 @route.get("/count")
-async def count_goals_of_match(db: db_deps, current_user: CurrentUser, id: int):
+async def count_goals_of_match(
+    db: db_deps,
+    current_user: CurrentUser,
+    id: int,
+):
     is_admin(db, current_user)
     goal1, goal2 = count_goals(db, id)
-    return goal1, goal2
+    return {
+        "status": "success",
+        "message": "Goals counted successfully",
+        "data": {"goal1": goal1, "goal2": goal2},
+    }

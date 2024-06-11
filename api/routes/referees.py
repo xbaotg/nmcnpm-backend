@@ -15,7 +15,10 @@ route = APIRouter()
 
 def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
     if current_user is None:
-        raise HTTPException(status_code=401, detail="Authentication Failed")
+        raise HTTPException(
+            status_code=401,
+            detail={"status": "error", "message": "Authentication Failed"},
+        )
 
     user_role = (
         db.query(Users).filter(Users.user_id == current_user["user_id"]).first().role  # type: ignore
@@ -31,13 +34,21 @@ def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
             .show  # type: ignore
         ):
             raise HTTPException(
-                status_code=401, detail="Your account is no longer active!"
+                status_code=401,
+                detail={
+                    "status": "error",
+                    "message": "Your account is no longer active!",
+                },
             )
 
         return True
     elif role == "admin" and user_role != role:
         raise HTTPException(
-            status_code=401, detail="You don't have permission to do this action!"
+            status_code=401,
+            detail={
+                "status": "error",
+                "message": "You don't have permission to do this action!",
+            },
         )
 
     return True
@@ -50,7 +61,7 @@ async def add_refs(ref: RefCreate, db: db_deps):  # current_user: CurrentUser):
         newRefDict = ref.dict()
         for key, value in newRefDict.items():
             if value == "string":
-                return {"message": f"{key} is required."}
+                return {"status": "error", "message": f"{key} is required."}
 
         count = db.query(func.max(Referees.ref_id)).scalar()
         newRefDict["ref_id"] = (count or 0) + 1
@@ -59,7 +70,11 @@ async def add_refs(ref: RefCreate, db: db_deps):  # current_user: CurrentUser):
         db.add(new_db_ref)
         db.commit()
         db.refresh(new_db_ref)
-        return new_db_ref
+        return {
+            "status": "success",
+            "message": "Referee added successfully",
+            "data": new_db_ref,
+        }
 
     except HTTPException as e:
         db.rollback()
@@ -67,10 +82,13 @@ async def add_refs(ref: RefCreate, db: db_deps):  # current_user: CurrentUser):
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail={"status": "error", "message": f"Internal Server Error: {str(e)}"},
+        )
 
 
-@route.get("/get-ref", response_model=List[RefShow])
+@route.get("/get-ref")
 async def get_ref(ref_name: str, db: db_deps, threshold: int = 80):
     try:
         refs = db.query(Referees).filter(Referees.show == True).all()
@@ -81,23 +99,42 @@ async def get_ref(ref_name: str, db: db_deps, threshold: int = 80):
         ]
 
         if not matched_refs:
-            raise HTTPException(status_code=204, detail="Cannot find ref")
+            raise HTTPException(
+                status_code=204,
+                detail={"status": "error", "message": "Cannot find ref"},
+            )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-    return matched_refs
+        raise HTTPException(
+            status_code=500,
+            detail={"status": "error", "message": f"Internal Server Error: {str(e)}"},
+        )
+    return {
+        "status": "success",
+        "message": "Referees fetched successfully",
+        "data": matched_refs,
+    }
 
 
-@route.get("/get-all", response_model=List[RefShow])
+@route.get("/get-all")
 async def get_all_refs(db: db_deps):
     try:
         refs = db.query(Referees).filter(Referees.show == True).all()
         if not refs:
-            raise HTTPException(status_code=204, detail="No refs found")
+            raise HTTPException(
+                status_code=204, detail={"status": "error", "message": "No refs found"}
+            )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail={"status": "error", "message": f"Internal Server Error: {str(e)}"},
+        )
 
-    return refs
+    return {
+        "status": "success",
+        "message": "All referees fetched successfully",
+        "data": refs,
+    }
 
 
 @route.put("/update-ref")
@@ -110,14 +147,21 @@ async def update_ref(
         update_info = ref_update.dict(exclude_unset=True)
         for key, value in update_info.items():
             if value == "string":
-                return {"message": f"{key} is required."}
+                return {"status": "error", "message": f"{key} is required."}
             setattr(target, key, value)
         db.commit()
         db.refresh(target)
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}!")
-    return target
+        raise HTTPException(
+            status_code=500,
+            detail={"status": "error", "message": f"Internal Server Error: {str(e)}!"},
+        )
+    return {
+        "status": "success",
+        "message": "Referee updated successfully",
+        "data": target,
+    }
 
 
 @route.put("/delete-ref")
@@ -129,19 +173,27 @@ async def delete_ref(ref_id: int, current_user: CurrentUser, db: db_deps):
 
         if target is None:
             raise HTTPException(
-                status_code=204, detail="Can't find ref with id:{ref_id}"
+                status_code=204,
+                detail={
+                    "status": "error",
+                    "message": f"Can't find ref with id:{ref_id}",
+                },
             )
 
         if target.show == True:
             target.show = False
             db.commit()
-            return {"message": f"Deleted ref with id:{ref_id}"}
+            return {"status": "success", "message": f"Deleted ref with id:{ref_id}"}
         else:
-            return {"message": f"Can't find ref with id:{ref_id}. Maybe deleted."}
+            return {
+                "status": "error",
+                "message": f"Can't find ref with id:{ref_id}. Maybe deleted.",
+            }
 
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Internal Server Error: {str(e)} !"
+            status_code=500,
+            detail={"status": "error", "message": f"Internal Server Error: {str(e)} !"},
         )
 
 
@@ -153,12 +205,13 @@ async def restore_deleted_ref(ref_id: int, current_user: CurrentUser, db: db_dep
         if target.show != True:
             target.show = True
             db.commit()
-            return {"message": f"Restored ref with id:{ref_id}"}
+            return {"status": "success", "message": f"Restored ref with id:{ref_id}"}
         else:
-            return {"message": f"Can't find ref with id:{ref_id}."}
+            return {"status": "error", "message": f"Can't find ref with id:{ref_id}."}
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Internal Server Error: {str(e)} !"
+            status_code=500,
+            detail={"status": "error", "message": f"Internal Server Error: {str(e)} !"},
         )
 
 
@@ -166,9 +219,28 @@ async def restore_deleted_ref(ref_id: int, current_user: CurrentUser, db: db_dep
 async def permanently_delete_ref(ref_id: int, db: db_deps, current_user: CurrentUser):
     hasPermission = get_user_permission(db, current_user, "manager")
 
-    target = db.query(Referees).filter(Referees.ref_id == ref_id).first()
+    try:
+        target = db.query(Referees).filter(Referees.ref_id == ref_id).first()
 
-    db.delete(target)
-    db.commit()
+        if target is None:
+            raise HTTPException(
+                status_code=204,
+                detail={
+                    "status": "error",
+                    "message": f"Can't find ref with id:{ref_id}",
+                },
+            )
 
-    return {"message": f"Delete refs with id {ref_id} successfully !"}
+        db.delete(target)
+        db.commit()
+
+        return {
+            "status": "success",
+            "message": f"Delete refs with id {ref_id} successfully !",
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={"status": "error", "message": f"Internal Server Error: {str(e)} !"},
+        )

@@ -1,8 +1,9 @@
 from datetime import date, time, datetime
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 from fuzzywuzzy import fuzz
 from sqlalchemy import func, or_
+from starlette.responses import JSONResponse
 
 from api.deps import CurrentUser, List
 from core.db import db_deps, Depends
@@ -22,7 +23,16 @@ from utils import (
     count_goals,
 )
 
+app = FastAPI()
 route = APIRouter()
+
+
+@app.exception_handler(HTTPException)
+async def custom_http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"status": "error", "message": exc.detail},
+    )
 
 
 @route.get("/get-matches")
@@ -33,14 +43,6 @@ async def get_matches(db: db_deps):
     for match in db_matches:
         now = datetime.now()
         now_unix = now.timestamp()
-
-        # logger.info(f"now_unix: {now_unix} - match.start: {match.start}")
-
-        # if now_unix > match.start:
-        #     goal1, goal2 = count_goals(db, match.match_id)
-        # else:
-        # goal1 = match.goal1
-        # goal2 = match.goal2
 
         res = MatchResponse(
             match_id=match.match_id,
@@ -57,7 +59,11 @@ async def get_matches(db: db_deps):
 
         res_list.append(res)
 
-    return res_list
+    return {
+        "status": "success",
+        "message": "Matches retrieved successfully",
+        "data": res_list,
+    }
 
 
 @route.get("/filter-matches-by-team-name")
@@ -87,7 +93,11 @@ async def get_matches(db: db_deps, club: str):
             lineman=match.lineman_id,
         )
         res_list.append(res)
-    return res_list
+    return {
+        "status": "success",
+        "message": "Matches filtered by team name successfully",
+        "data": res_list,
+    }
 
 
 # get unfinished matches
@@ -112,7 +122,11 @@ async def get_fixtures(db: db_deps):
             lineman=match.lineman_id,
         )
         res_list.append(res)
-    return res_list
+    return {
+        "status": "success",
+        "message": "Fixtures retrieved successfully",
+        "data": res_list,
+    }
 
 
 # get result = get finished matches
@@ -138,7 +152,11 @@ async def get_matches_results(db: db_deps):
         )
         res_list.append(res)
 
-    return res_list
+    return {
+        "status": "success",
+        "message": "Match results retrieved successfully",
+        "data": res_list,
+    }
 
 
 # ADD MATCH: can handle string input or id input
@@ -172,36 +190,15 @@ async def add_match(db: db_deps, current_user: CurrentUser, match: AddMatch):
         show=True,
     )
 
-    # result for user
-    # match_return.team1 = convert_from_attr(
-    #     Clubs, match_return.team1, "club_id", "club_name"
-    # )
-    # match_return.team2 = convert_from_attr(
-    #     Clubs, match_return.team2, "club_id", "club_name"
-    # )
-    # match_return.ref = convert_from_attr(
-    #     Referees, match_return.ref, "ref_id", "ref_name"
-    # )
-    # match_return.var = convert_from_attr(
-    #     Referees, match_return.var, "ref_id", "ref_name"
-    # )
-    # match_return.lineman = convert_from_attr(
-    #     Referees, match_return.lineman, "ref_id", "ref_name"
-    # )
-
     db.add(new_match)
     db.commit()
     db.refresh(new_match)
 
-    # return match_return, new_match
-    return new_match
-
-
-#     # Chuỗi thời gian
-# time_string = "01:12 31/05/2024"
-
-# # Chuyển đổi chuỗi thành datetime
-# start_time = datetime.strptime(time_string, f"%H:%M %d/%m/%Y")
+    return {
+        "status": "success",
+        "message": "Match added successfully",
+        "data": new_match,
+    }
 
 
 @route.put("/update-match")
@@ -221,38 +218,14 @@ async def update_match(
     )
 
     if not target:
-        raise HTTPException(status_code=400, detail=f"Can't find any match")
+        raise HTTPException(status_code=400, detail="Can't find any match")
 
     # check if the input is valid
     update = valid_update_match(db, update, id)
 
     try:
-        # today = datetime.now()
-        # start_time = datetime.strptime(update.start, f"%H:%M %d/%m/%Y")
         today = datetime_to_unix(datetime.now())
         start_time = update.start
-
-        # if update.goal1 != -1 and update.goal2 != -1:
-        #     # update goal -> no update time -> check today >= update.start
-        #     if not (today >= start_time):
-        #         raise HTTPException(
-        #             status_code=400,
-        #             detail=f"Can't update result for unfinished matches !",
-        #         )
-
-        #     target.goal1 = update.goal1
-        #     target.goal2 = update.goal2
-
-        # else:
-        # no goal update -> update other attributes -> check today < update.start
-        # if update.start != 0:
-        #     if today >= start_time:
-        #         raise HTTPException(
-        #             status_code=400,
-        #             detail=f"Today is {today}, but match start at {start_time}",
-        #         )
-        # else:
-        #     start_time = target.start
 
         target.start = start_time
         target.finish = update.finish
@@ -271,7 +244,11 @@ async def update_match(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
-    return target
+    return {
+        "status": "success",
+        "message": "Match updated successfully",
+        "data": target,
+    }
 
 
 @route.put("/update-result")
@@ -288,7 +265,6 @@ async def update_result(
         raise HTTPException(status_code=400, detail="Can't find any matches!")
 
     # check if match has finished
-    # today = datetime.now()
     today = datetime_to_unix(datetime.now())
     if today < target.start:
         raise HTTPException(
@@ -305,7 +281,11 @@ async def update_result(
     db.commit()
     db.refresh(target)
 
-    return target
+    return {
+        "status": "success",
+        "message": "Result updated successfully",
+        "data": target,
+    }
 
 
 # DELETE
@@ -317,14 +297,18 @@ async def delete_match(db: db_deps, current_user: CurrentUser, id: int):
     )
 
     if not target:
-        return {"message": "Can't find any matches, maybe deleted"}
+        return {"status": "error", "message": "Can't find any matches, maybe deleted"}
 
     target.show = False
 
     db.commit()
     db.refresh(target)
 
-    return {"message": "Delete match successfully (temporarily)!"}
+    return {
+        "status": "success",
+        "message": "Match deleted successfully (temporarily)",
+        "data": target,
+    }
 
 
 # delete permanently
@@ -337,11 +321,19 @@ async def permanently_delete_match(db: db_deps, current_user: CurrentUser, id: i
 
     if not target:
         return {
-            "message": "Can't find any matches, make sure to temporarily delete first "
+            "status": "error",
+            "message": "Can't find any matches, make sure to temporarily delete first ",
         }
 
     db.delete(target)
     db.commit()
     db.refresh(target)
 
-    return {"message": "Delete match successfully !"}
+    return {
+        "status": "success",
+        "message": "Match permanently deleted successfully",
+        "data": target,
+    }
+
+
+app.include_router(route)

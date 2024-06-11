@@ -13,6 +13,12 @@ class UserCreateBase(BaseModel):
     user_mail: str
 
 
+class UserCreateBaseResponse(BaseModel):
+    status: str
+    message: str
+    data: UserCreateBase
+
+
 class UserReg(BaseModel):
     user_id: int | None
     full_name: str | None
@@ -27,6 +33,12 @@ class UserReg(BaseModel):
         orm_mode = True
 
 
+class UserRegResponse(BaseModel):
+    status: str
+    message: str
+    data: UserReg
+
+
 class UserUpdate(BaseModel):
     full_name: str | None
     role: str | None
@@ -35,3 +47,9 @@ class UserUpdate(BaseModel):
     user_nation: str | None
     user_bday: int | None
     user_mail: str | None
+
+
+class UserUpdateResponse(BaseModel):
+    status: str
+    message: str
+    data: UserUpdate
