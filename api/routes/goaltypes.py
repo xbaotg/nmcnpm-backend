@@ -28,11 +28,15 @@ async def add_types(db: db_deps, current_user: CurrentUser, new_type: str):
     # check duplicated
     dup = (
         db.query(GoalTypes)
-        .filter(GoalTypes.show == True, GoalTypes.type_name == new_type.upper())
+        .filter(GoalTypes.type_name == new_type.upper())
         .first()
     )
-    if dup:
+    if dup.show == True:
         raise HTTPException(status_code=400, detail="Duplicated goal type!")
+    else if dup.show == False:
+        dup.show = True
+        db.commit()
+        return dup
 
     max_id = db.query(func.max(GoalTypes.type_id)).scalar()
     new_db_type = GoalTypes(
