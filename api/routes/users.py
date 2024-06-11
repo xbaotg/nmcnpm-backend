@@ -210,13 +210,18 @@ async def update_user_info(
         update_info = new_info.dict(exclude_unset=True)
 
         for key, value in update_info.items():
-            if value == "string":
+            print(key, value)
+
+            if value == "string" or value is None:
                 continue
+
             if key == "user_bday":
                 if value == 0:
                     continue
+
             if key == "password":
                 value = get_password_hash(value)
+
             setattr(target, key, value)
 
         db.commit()
