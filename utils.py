@@ -6,7 +6,7 @@ from sqlalchemy import select, exists, or_, func
 from core.db import db_deps, get_params, db
 from api.deps import CurrentUser
 
-from schemas.db import Users, Params, Players, Clubs, Referees, Matches, Events
+from schemas.db import Users, Params, Players, Clubs, Referees, Matches, Events, Stadiums
 from schemas.params import Show_Params
 from schemas.matches import AddMatch, MatchUpdate
 
@@ -266,6 +266,8 @@ def valid_add_match(
     # convert string to datetime
     start_time = match.start
 
+    
+
     # check overlap between matches (1 team play 1 match per day)
     overlap = (
         db.query(Matches)
@@ -333,6 +335,11 @@ def valid_add_match(
         )
         if not target:
             raise HTTPException(status_code=400, detail=f"Lineman referee not found !")
+
+    #check stadium 
+    std = db.query(Stadiums).filter(Stadiums.show==True, Stadiums.std_id==match.stadium).first()
+    if not std:
+        raise HTTPException(status_code=400, detail="Can't find stadium")
 
     match.team1 = team1
     match.team2 = team2
@@ -412,6 +419,12 @@ def valid_update_match(db: db_deps, match: MatchUpdate, id: int):
 
     if match.finish == 0:
         match.finish = target.finish
+    
+    #check stadium 
+    std = db.query(Stadiums).filter(Stadiums.show==True, Stadiums.std_id==match.stadium).first()
+
+    if not std:
+        raise HTTPException(status_code=400, detail="Can't find stadium")
 
     match.team1 = team1
     match.team2 = team2

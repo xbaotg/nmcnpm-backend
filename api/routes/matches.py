@@ -52,6 +52,7 @@ async def get_matches(db: db_deps):
             finish=match.finish,
             goal1=match.goal1,
             goal2=match.goal2,
+            stadium=match.stadium,
             ref=match.ref_id,
             var=match.var_id,
             lineman=match.lineman_id,
@@ -67,7 +68,7 @@ async def get_matches(db: db_deps):
 
 
 @route.get("/filter-matches-by-team-name")
-async def get_matches(db: db_deps, club: str):
+async def get_matches_by_team_name(db: db_deps, club: str):
     search = convert_from_attr(Clubs, club, "club_name", "club_id", True)
 
     db_matches = (
@@ -88,6 +89,7 @@ async def get_matches(db: db_deps, club: str):
             finish=match.finish,
             goal1=match.goal1,
             goal2=match.goal2,
+            stadium=match.stadium,
             ref=match.ref_id,
             var=match.var_id,
             lineman=match.lineman_id,
@@ -117,6 +119,7 @@ async def get_fixtures(db: db_deps):
             finish=match.finish,
             goal1=match.goal1,
             goal2=match.goal2,
+            stadium=match.stadium,
             ref=match.ref_id,
             var=match.var_id,
             lineman=match.lineman_id,
@@ -146,6 +149,7 @@ async def get_matches_results(db: db_deps):
             finish=match.finish,
             goal1=match.goal1,
             goal2=match.goal2,
+            stadium=match.stadium,
             ref=match.ref_id,
             var=match.var_id,
             lineman=match.lineman_id,
@@ -174,6 +178,7 @@ async def add_match(db: db_deps, current_user: CurrentUser, match: AddMatch):
     db_match.start = min(db_match.start, 2 * 10**9)
     db_match.finish = min(db_match.finish, 2 * 10**9)
 
+
     # auto complete goal1, goal2 and show
     max_id = db.query(func.max(Matches.match_id)).scalar()
     new_match = Matches(
@@ -184,6 +189,7 @@ async def add_match(db: db_deps, current_user: CurrentUser, match: AddMatch):
         finish=db_match.finish,
         goal1=db_match.goal1,
         goal2=db_match.goal2,
+        stadium=match.stadium,
         ref_id=db_match.ref,
         var_id=db_match.var,
         lineman_id=db_match.lineman,

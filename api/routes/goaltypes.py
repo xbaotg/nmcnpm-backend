@@ -30,16 +30,17 @@ async def add_types(db: db_deps, current_user: CurrentUser, new_type: str):
     is_admin(db, current_user)
 
     # check duplicated
-    dup = db.query(GoalTypes).filter(GoalTypes.type_name == new_type.upper()).first()
-    if dup:
-        if dup.show == True:
-            raise HTTPException(
-                status_code=400, detail=json_response("error", "Duplicated goal type!")
-            )
-        elif dup.show == False:
-            dup.show = True
-            db.commit()
-            return json_response("success", "Goal type reactivated", dup)
+    dup = (
+        db.query(GoalTypes)
+        .filter(GoalTypes.type_name == new_type.upper())
+        .first()
+    )
+    if dup and dup.show == True:
+        raise HTTPException(status_code=400, detail="Duplicated goal type!")
+    elif dup and dup.show == False:
+        dup.show = True
+        db.commit()
+        return dup
 
     max_id = db.query(func.max(GoalTypes.type_id)).scalar()
     new_db_type = GoalTypes(
