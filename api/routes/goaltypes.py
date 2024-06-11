@@ -26,11 +26,7 @@ async def add_types(db: db_deps, current_user: CurrentUser, new_type: str):
     is_admin(db, current_user)
 
     # check duplicated
-    dup = (
-        db.query(GoalTypes)
-        .filter(GoalTypes.type_name == new_type.upper())
-        .first()
-    )
+    dup = db.query(GoalTypes).filter(GoalTypes.type_name == new_type.upper()).first()
     if dup.show == True:
         raise HTTPException(status_code=400, detail="Duplicated goal type!")
     elif dup.show == False:

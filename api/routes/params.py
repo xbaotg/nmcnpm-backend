@@ -47,7 +47,7 @@ def is_admin(db: db_deps, current_user: CurrentUser):
 
 
 # GET
-@route.get("/show-params/", response_model=Show_Params)
+@route.get("/show-params", response_model=Show_Params)
 async def show_params(db: db_deps, current_user: CurrentUser):
     is_admin(db, current_user)
     count_goal_types(db)
@@ -60,7 +60,7 @@ async def show_params(db: db_deps, current_user: CurrentUser):
 
 
 # UPDATE
-@route.put("/update-params/")
+@route.put("/update-params")
 async def update_params(
     db: db_deps, current_user: CurrentUser, new_info: Update_Params
 ):

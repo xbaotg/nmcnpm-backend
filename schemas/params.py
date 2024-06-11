@@ -21,7 +21,7 @@ class Show_Params(BaseModel):
 
     max_goal_types: int
     max_goal_time: int
-    
+
     priority: str
 
     class Config:
