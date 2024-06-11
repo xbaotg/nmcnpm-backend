@@ -225,8 +225,8 @@ async def get_players_by_nation(nation: str, db: db_deps, threshold: int = 80):
 
 @route.put("/update-player")
 async def update_player(
-    playerID: int, player_update: PlayerUpdate, db: db_deps
-):  # current_user: CurrentUser):
+    playerID: int, player_update: PlayerUpdate, db: db_deps, current_user: CurrentUser
+):
     try:
         # hasPermission = get_user_permission(current_user, db, "manager")
         target = db.query(Players).filter(Players.player_id == playerID).first()
@@ -234,15 +234,16 @@ async def update_player(
         for key, value in update_info.items():
             if value == "string":
                 return {"message": f"{key} is required."}
-            if key == "player_bday" and not isValidAge(value):
+            if key == "player_bday" and not is_valid_age(value):
                 return {"message": "User age is not legal"}
             setattr(target, key, value)
         db.commit()
         db.refresh(target)
 
+        return create_player_res(target)
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}!")
-    return create_player_res(target)
 
 
 @route.put("/delete-player")

@@ -244,15 +244,15 @@ async def update_match(
         #     target.goal2 = update.goal2
 
         # else:
-            # no goal update -> update other attributes -> check today < update.start
-            # if update.start != 0:
-            #     if today >= start_time:
-            #         raise HTTPException(
-            #             status_code=400,
-            #             detail=f"Today is {today}, but match start at {start_time}",
-            #         )
-            # else:
-            #     start_time = target.start
+        # no goal update -> update other attributes -> check today < update.start
+        # if update.start != 0:
+        #     if today >= start_time:
+        #         raise HTTPException(
+        #             status_code=400,
+        #             detail=f"Today is {today}, but match start at {start_time}",
+        #         )
+        # else:
+        #     start_time = target.start
 
         target.start = start_time
         target.finish = update.finish
