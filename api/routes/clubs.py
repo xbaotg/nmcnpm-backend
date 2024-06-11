@@ -152,6 +152,19 @@ async def search_club_by_manager_id(db: db_deps, manager_search_id: int):
         "data": result,
     }
 
+@route.get("/manager-get-club")
+async def manager_get_club(db: db_deps, current_user: CurrentUser):
+    #find current user
+    user = db.query(Users).filter(Users.show==True, Users.user_id==current_user["user_id"]).first()
+
+    manager_id = user.user_id
+    manager_club = db.query(Clubs).filter(Clubs.show == True, Clubs.manager == manager_id).first()
+
+    return {
+        "status": "success",
+        "message": "Find club successful",
+        "data": manager_club
+    }
 
 @route.get("/get-players-of-clubs/{club_name}")
 async def get_all_players_of_clubs(db: db_deps, club_name: str):
