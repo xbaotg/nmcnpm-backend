@@ -252,3 +252,4 @@ async def count_goals_of_match(db: db_deps, current_user: CurrentUser, id: int):
     is_admin(db, current_user)
     goal1, goal2 = count_goals(db, id)
     return goal1, goal2
+

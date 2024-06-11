@@ -92,6 +92,7 @@ class Matches(Base):
     goal2 = Column(Integer, index=True)
     start = Column(Integer, index=True)
     finish = Column(Integer, index=True)
+    stadium = Column(Integer, ForeignKey("stadiums.std_id"), index=True)
     ref_id = Column(Integer, ForeignKey("referees.ref_id"), index=True)
     var_id = Column(Integer, ForeignKey("referees.ref_id"), index=True)
     lineman_id = Column(Integer, ForeignKey("referees.ref_id"), index=True)
@@ -131,4 +132,12 @@ class Ranking(Base):
     club_goals = Column(Integer, index=True)
     club_gconcede = Column(Integer, index=True)
     club_gdif = Column(Integer, index=True)
+    show = Column(Boolean, index=True)
+
+class Stadiums(Base):
+    __tablename__ = "stadiums"
+
+    std_id = Column(Integer, primary_key=True, index=True)
+    std_name = Column(String, index=True)
+    cap = Column(Integer, index=True)
     show = Column(Boolean, index=True)
