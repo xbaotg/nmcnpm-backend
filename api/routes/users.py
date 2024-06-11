@@ -99,7 +99,11 @@ async def get_all_users(current_user: CurrentUser, db: db_deps):
 async def get_user_info(current_user: CurrentUser, db: db_deps):
     try:
         res = get_info_user(db, current_user)
-        return {"status": "success", "data": res}
+
+        if res["status"] == "error":
+            return res
+
+        return {"status": "success", "data": res["data"]}
 
     except Exception as e:
         return {"status": "error", "message": str(e)}

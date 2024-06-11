@@ -20,10 +20,12 @@ async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_deps
 ):
     try:
-        user = authenticate_user(form_data.username, form_data.password, db)
+        response = authenticate_user(form_data.username, form_data.password, db)
 
-        if not user:
+        if response.get("status") == "error":
             return {"status": "error", "message": "Incorrect username or password."}
+
+        user = response.get("data")
 
         token = create_access_token(
             user.user_name, user.user_id, timedelta(minutes=1440)

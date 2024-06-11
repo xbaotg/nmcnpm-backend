@@ -240,6 +240,7 @@ async def update_match(
         target.ref_id = update.ref
         target.var_id = update.var
         target.lineman_id = update.lineman
+        target.stadium = update.stadium
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Update error: {str(e)}")

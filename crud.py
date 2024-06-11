@@ -13,7 +13,6 @@ from utils import (
     check_foreign_player,
     date_to_unix,
 )
-
 from schemas.players import Player_Add_With_Club
 
 
@@ -21,23 +20,23 @@ def authenticate_user(username: str, password: str, db: db_deps):
     try:
         user = db.query(Users).filter(Users.user_name == username).first()
     except Exception as e:
-        raise HTTPException(status_code=501, detail=f"The error is : {str(e)}")
+        return {"status": "error", "message": f"The error is : {str(e)}"}
 
     if not user:
-        return False
+        return {"status": "error", "message": "Invalid username or password"}
 
     try:
         if not verify_password(password, user.password):
-            return False
+            return {"status": "error", "message": "Invalid username or password"}
 
     except Exception:
         if user.password != password:
-            return False
+            return {"status": "error", "message": "Invalid username or password"}
 
-    return user
+    return {"status": "success", "message": "Authentication successful", "data": user}
 
 
-def create_user(db: db_deps, new_user: UserCreateBase) -> Users | dict:
+def create_user(db: db_deps, new_user: UserCreateBase) -> dict:
     newUserdict = new_user.dict()
     # check duplicated user_name
     duplicated_name = (
@@ -45,22 +44,21 @@ def create_user(db: db_deps, new_user: UserCreateBase) -> Users | dict:
     )
     if duplicated_name is not None:
         return {
-            "message": f"{newUserdict['user_name']} has been used, please choose another user name !"
+            "status": "error",
+            "message": f"{newUserdict['user_name']} has been used, please choose another user name!",
         }
 
     for key, value in newUserdict.items():
-        if value == "string":  # kiem tra noi dung khong duoc nhap
-            return {"message": f"{key} is required."}
+        if value == "string":  # check for missing values
+            return {"status": "error", "message": f"{key} is required."}
 
-        if key == "user_bday":  # kiem tra tuoi
+        if key == "user_bday":  # check age validity
             if not is_valid_age(value):
-                return {"message": "User age is not legal"}
+                return {"status": "error", "message": "User age is not legal"}
 
     # auto complete data
     if newUserdict["role"] != "admin" and newUserdict["role"] != "manager":
-        raise HTTPException(
-            status_code=401, detail="Role must be 'admin' or 'manager'!"
-        )
+        return {"status": "error", "message": "Role must be 'admin' or 'manager'!"}
 
     newUserdict["user_bday"] = newUserdict["user_bday"]
     newUserdict["password"] = get_password_hash(newUserdict["password"])
@@ -72,10 +70,14 @@ def create_user(db: db_deps, new_user: UserCreateBase) -> Users | dict:
         db.add(new_db_user)
         db.commit()
 
-        return {"message": "Added user succesfully !"}
+        return {
+            "status": "success",
+            "message": "Added user successfully!",
+            "data": new_db_user,
+        }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Can't add new user: {str(e)}")
+        return {"status": "error", "message": f"Can't add new user: {str(e)}"}
 
 
 def get_info_user(db: db_deps, current_user: CurrentUser):
@@ -85,9 +87,8 @@ def get_info_user(db: db_deps, current_user: CurrentUser):
         )
 
         if user is None:
-            raise HTTPException(status_code=204, detail="Can't find user !")
+            return {"status": "error", "message": "Can't find user!"}
 
-        # bday = datetime.combine(user.user_bday, datetime.min.time())
         res = UserReg(
             user_id=user.user_id,
             full_name=user.full_name,
@@ -98,22 +99,24 @@ def get_info_user(db: db_deps, current_user: CurrentUser):
             user_bday=user.user_bday,
             show=user.show,
         )
-        return res
+        return {
+            "status": "success",
+            "message": "User information retrieved successfully",
+            "data": res,
+        }
 
     except HTTPException as e:
-        raise
+        return {"status": "error", "message": str(e.detail)}
 
     except Exception as e:
         import traceback
 
         traceback.print_exc()
 
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        return {"status": "error", "message": f"Internal server error: {str(e)}"}
 
 
-def create_club(
-    db: db_deps, current_user: CurrentUser, new_club: Club_Create
-) -> Clubs | dict:
+def create_club(db: db_deps, current_user: CurrentUser, new_club: Club_Create) -> dict:
 
     new_club = new_club.dict()
 
@@ -123,7 +126,8 @@ def create_club(
     )
     if duplicated_name is not None:
         return {
-            "message": f"{new_club['club_name']} has been used, please choose another club name !"
+            "status": "error",
+            "message": f"{new_club['club_name']} has been used, please choose another club name!",
         }
 
     # check if current_user is another club's manager
@@ -133,14 +137,14 @@ def create_club(
         .first()
     )
     if duplicated_manager is not None:
-        return {"message": f"You can just create 1 club!"}
+        return {"status": "error", "message": "You can just create 1 club!"}
 
     # check not entered values
     for key, value in new_club.items():
         if key == "club_players":
             continue
         if value == "string":
-            return {"message": f"{key} is required."}
+            return {"status": "error", "message": f"{key} is required."}
 
     # auto complete data
     count = db.query(func.max(Clubs.club_id)).scalar()
@@ -154,7 +158,7 @@ def create_club(
     # check player num
     if not check_club_player_num(db, len(club_players)):
         db.rollback()
-        return {"message": "Club doesn't have enough players"}
+        return {"status": "error", "message": "Club doesn't have enough players"}
 
     # check maximum foreign player
     count = 0
@@ -164,7 +168,8 @@ def create_club(
     valid, max_foreign_player = check_foreign_player(db, count)
     if not valid:
         return {
-            "message": f"Too many foreign players (maximum is {max_foreign_player})"
+            "status": "error",
+            "message": f"Too many foreign players (maximum is {max_foreign_player})",
         }
 
     # add total players
@@ -175,11 +180,12 @@ def create_club(
         new_db_club = Clubs(**new_club)
         db.add(new_db_club)
         db.commit()
-        return {"message": "Created club successfully!"}
+
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail="Internal Server Error: Can't create new club"
-        )
+        return {
+            "status": "error",
+            "message": f"Internal Server Error: Can't create new club",
+        }
 
     # add player
     iter = 0
@@ -199,14 +205,15 @@ def create_club(
                     and dup_player.js_number == player["js_number"]
                 ):
                     return {
-                        "message": f"Player {player['player_name']} already existed!"
+                        "status": "error",
+                        "message": f"Player {player['player_name']} already existed!",
                     }
             newPlayerDict = player
             for key, value in newPlayerDict.items():
                 if value == "string":
-                    return {"message": f"{key} is required."}
+                    return {"status": "error", "message": f"{key} is required."}
                 if key == "player_bday" and not is_valid_age(value):
-                    return {"message": "Player age is not legal"}
+                    return {"status": "error", "message": "Player age is not legal"}
 
             count = db.query(func.max(Players.player_id)).scalar()
             newPlayerDict["player_id"] = (count or 0) + 1 + iter
@@ -219,10 +226,14 @@ def create_club(
 
         db.commit()
         db.refresh(new_db_club)
-        return {"message": "Created club and players successfully!"}
+        return {
+            "status": "success",
+            "message": "Created club and players successfully!",
+            "data": new_db_club,
+        }
     except Exception as e:
         db.rollback()
-        db.query(Clubs).filter(Clubs.club_name == new_club.club_name).delete()
+        db.query(Clubs).filter(Clubs.club_name == new_club["club_name"]).delete()
         db.commit()
 
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+        return {"status": "error", "message": f"Internal Server Error: {str(e)}"}
