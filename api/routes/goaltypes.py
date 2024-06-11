@@ -46,22 +46,25 @@ async def add_types(db: db_deps, current_user: CurrentUser, new_type: str):
 
 
 @route.put("/delete-types")
-async def delete_types(db: db_deps, current_user: CurrentUser, type_name: str):
+async def delete_types(db: db_deps, current_user: CurrentUser, type_id: int):
     is_admin(db, current_user)
 
     # find target
     target = (
         db.query(GoalTypes)
-        .filter(GoalTypes.show == True, GoalTypes.type_name == type_name.upper())
+        .filter(GoalTypes.show == True, GoalTypes.type_id == type_id)
         .first()
     )
+
     if not target:
         raise HTTPException(status_code=400, detail="Can't find this type")
+    
+    type_name = target.type_name
 
     # check if any events is using this type
     event = (
         db.query(Events)
-        .filter(Events.show == True, Events.events == type_name.upper())
+        .filter(Events.show == True, Events.events == type_name)
         .first()
     )
 
