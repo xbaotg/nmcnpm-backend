@@ -43,7 +43,7 @@ def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
     return True
 
 
-@route.post("/add_refs")
+@route.post("/add-refs")
 async def add_refs(ref: RefCreate, db: db_deps):  # current_user: CurrentUser):
     try:
         # hasPermission = get_user_permission(current_user, db, "admin")
@@ -70,7 +70,7 @@ async def add_refs(ref: RefCreate, db: db_deps):  # current_user: CurrentUser):
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 
-@route.get("/get_ref", response_model=List[RefShow])
+@route.get("/get-ref", response_model=List[RefShow])
 async def get_ref(ref_name: str, db: db_deps, threshold: int = 80):
     try:
         refs = db.query(Referees).filter(Referees.show == True).all()
@@ -100,7 +100,7 @@ async def get_all_refs(db: db_deps):
     return refs
 
 
-@route.put("/update_ref")
+@route.put("/update-ref")
 async def update_ref(
     ref_id: int, ref_update: RefUpdate, db: db_deps
 ):  # current_user: CurrentUser):
@@ -120,7 +120,7 @@ async def update_ref(
     return target
 
 
-@route.put("/delete_ref")
+@route.put("/delete-ref")
 async def delete_ref(ref_id: int, current_user: CurrentUser, db: db_deps):
     hasPermission = get_user_permission(db, current_user, "admin")
 
@@ -145,7 +145,7 @@ async def delete_ref(ref_id: int, current_user: CurrentUser, db: db_deps):
         )
 
 
-@route.put("/restore_deleted_ref")
+@route.put("/restore-deleted-ref")
 async def restore_deleted_ref(ref_id: int, current_user: CurrentUser, db: db_deps):
     hasPermission = get_user_permission(db, current_user, "manager")
     try:
@@ -162,7 +162,7 @@ async def restore_deleted_ref(ref_id: int, current_user: CurrentUser, db: db_dep
         )
 
 
-@route.delete("/permanently_delete_ref")
+@route.delete("/permanently-delete-ref")
 async def permanently_delete_ref(ref_id: int, db: db_deps, current_user: CurrentUser):
     hasPermission = get_user_permission(db, current_user, "manager")
 

@@ -62,7 +62,7 @@ def create_user(db: db_deps, new_user: UserCreateBase) -> Users | dict:
             status_code=401, detail="Role must be 'admin' or 'manager'!"
         )
 
-    newUserdict["user_bday"] = (newUserdict["user_bday"])
+    newUserdict["user_bday"] = newUserdict["user_bday"]
     newUserdict["password"] = get_password_hash(newUserdict["password"])
     newUserdict["show"] = True
     newUserdict["user_id"] = 1 + (db.query(func.max(Users.user_id)).scalar() or 0)
