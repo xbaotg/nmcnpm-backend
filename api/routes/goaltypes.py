@@ -31,9 +31,9 @@ async def add_types(db: db_deps, current_user: CurrentUser, new_type: str):
         .filter(GoalTypes.type_name == new_type.upper())
         .first()
     )
-    if dup.show == True:
+    if dup and dup.show == True:
         raise HTTPException(status_code=400, detail="Duplicated goal type!")
-    elif dup.show == False:
+    elif dup and dup.show == False:
         dup.show = True
         db.commit()
         return dup

@@ -11,6 +11,7 @@ class AddMatch(BaseModel):
     # finish:
     # goal1: int -> new match -> goal = None
     # goal2: int
+    stadium: int
     goal1: int = 0
     goal2: int = 0
     ref: int
@@ -26,6 +27,7 @@ class MatchResponse(BaseModel):
     team2: int
     start: int
     finish: int | None
+    stadium: int
     goal1: Optional[int] = None
     goal2: Optional[int] = None
     ref: int
@@ -38,6 +40,7 @@ class MatchUpdate(BaseModel):
     team2: int
     start: int
     finish: int
+    stadium: int
     goal1: int = -1
     goal2: int = -1
     ref: int

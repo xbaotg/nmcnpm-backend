@@ -12,10 +12,12 @@ from .routes import (
     events,
     ranking,
     goaltypes,
+    stadiums
 )
 
 router = APIRouter()
 
+router.include_router(stadiums.route, prefix=config.API_PREFIX_STADIUMS, tags=["stadiums"])
 router.include_router(ranking.route, prefix=config.API_PREFIX_RANKING, tags=["ranking"])
 router.include_router(
     goaltypes.route, prefix=config.API_PREFIX_GOALTYPES, tags=["goaltypes"]
