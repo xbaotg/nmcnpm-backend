@@ -6,7 +6,16 @@ from sqlalchemy import select, exists, or_, func
 from core.db import db_deps, get_params, db
 from api.deps import CurrentUser
 
-from schemas.db import Users, Params, Players, Clubs, Referees, Matches, Events, Stadiums
+from schemas.db import (
+    Users,
+    Params,
+    Players,
+    Clubs,
+    Referees,
+    Matches,
+    Events,
+    Stadiums,
+)
 from schemas.params import Show_Params
 from schemas.matches import AddMatch, MatchUpdate
 
@@ -266,8 +275,6 @@ def valid_add_match(
     # convert string to datetime
     start_time = match.start
 
-    
-
     # check overlap between matches (1 team play 1 match per day)
     overlap = (
         db.query(Matches)
@@ -336,8 +343,12 @@ def valid_add_match(
         if not target:
             raise HTTPException(status_code=400, detail=f"Lineman referee not found !")
 
-    #check stadium 
-    std = db.query(Stadiums).filter(Stadiums.show==True, Stadiums.std_id==match.stadium).first()
+    # check stadium
+    std = (
+        db.query(Stadiums)
+        .filter(Stadiums.show == True, Stadiums.std_id == match.stadium)
+        .first()
+    )
     if not std:
         raise HTTPException(status_code=400, detail="Can't find stadium")
 
@@ -419,9 +430,13 @@ def valid_update_match(db: db_deps, match: MatchUpdate, id: int):
 
     if match.finish == 0:
         match.finish = target.finish
-    
-    #check stadium 
-    std = db.query(Stadiums).filter(Stadiums.show==True, Stadiums.std_id==match.stadium).first()
+
+    # check stadium
+    std = (
+        db.query(Stadiums)
+        .filter(Stadiums.show == True, Stadiums.std_id == match.stadium)
+        .first()
+    )
 
     if not std:
         raise HTTPException(status_code=400, detail="Can't find stadium")
@@ -438,13 +453,20 @@ def valid_update_match(db: db_deps, match: MatchUpdate, id: int):
 # EVENT
 def check_event_time(db: db_deps, time: int):
     params = get_params(Params, db)
-    if time > params.max_goal_time:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Max time for an event is {params.max_goal_time.strftime('%H:%M')}",
-        )
 
-    return True
+    # convert params.max_goal_time from second to time format
+    temp = str(timedelta(seconds=params.max_goal_time))
+
+    if time > params.max_goal_time:
+        return {
+            "status": "error",
+            "message": f"The goal time is invalid. Max goal time is {temp} !",
+        }
+
+    return {
+        "status": "success",
+        "message": "Valid goal time !",
+    }
 
 
 # AUTO COUNT GOALS FOR A MATCH

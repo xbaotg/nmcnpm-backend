@@ -32,13 +32,18 @@ def create_player_res(player):
         # },
     }
 
-def create_player_res_with_goals(db:db_deps, player):
+
+def create_player_res_with_goals(db: db_deps, player):
     bday = None
     if player.player_bday is not None:
         bday = player.player_bday
     else:
         bday = player.player_bday
-    total_goals = db.query(Events).filter(Events.show==True, Events.player_id==player.player_id).count()
+    total_goals = (
+        db.query(Events)
+        .filter(Events.show == True, Events.player_id == player.player_id)
+        .count()
+    )
     return {
         # "status": "success",
         # "data": {
@@ -53,6 +58,7 @@ def create_player_res_with_goals(db:db_deps, player):
         "ava_url": player.avatar_url,
         # },
     }
+
 
 def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
     if current_user is None:
@@ -72,6 +78,7 @@ def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
             return {"status": "error", "message": "Your account is no longer active!"}
 
         return {"status": "success"}
+
     elif role == "admin" and user_role != role:
         return {
             "status": "error",
@@ -83,7 +90,8 @@ def get_user_permission(db: db_deps, current_user: CurrentUser, role: str):
 
 @route.post("/add-players")
 async def add_players(player: PlayerCreate, db: db_deps, current_user: CurrentUser):
-    permission_result = get_user_permission(db, current_user, "admin")
+    permission_result = get_user_permission(db, current_user, "manager")
+
     if permission_result["status"] == "error":
         return permission_result
 
@@ -137,6 +145,7 @@ async def add_players(player: PlayerCreate, db: db_deps, current_user: CurrentUs
 
     except HTTPException as e:
         db.rollback()
+
         return {"status": "error", "message": str(e)}
 
     except Exception as e:
@@ -233,7 +242,7 @@ async def update_player(
         db.commit()
         db.refresh(target)
 
-        return create_player_res_with_goals(target)
+        return create_player_res_with_goals(db, target)
 
     except Exception as e:
         return {"status": "error", "message": f"Internal Server Error: {str(e)}!"}
@@ -242,6 +251,7 @@ async def update_player(
 @route.put("/delete-player")
 async def delete_player(playerID: int, current_user: CurrentUser, db: db_deps):
     permission_result = get_user_permission(db, current_user, "manager")
+
     if permission_result["status"] == "error":
         return permission_result
 
@@ -263,7 +273,7 @@ async def delete_player(playerID: int, current_user: CurrentUser, db: db_deps):
             if not club:
                 return {"status": "error", "message": "Club not found"}
 
-            if club.total_player - 1 > MIN_CLUB_PLAYER:
+            if club.total_player - 1 < MIN_CLUB_PLAYER:
                 return {
                     "status": "error",
                     "message": "Total player is smaller than MIN_CLUB_PLAYER",

@@ -277,6 +277,7 @@ async def rank_baotg(db: db_deps):
         matches = db.query(Matches).filter(Matches.show == True).all()
         clubs = db.query(Clubs).filter(Clubs.show == True).all()
         results = {}
+        params = get_params(Params, db)
 
         for club in clubs:
             results[club.club_id] = {
@@ -311,8 +312,9 @@ async def rank_baotg(db: db_deps):
 
         for club in clubs:
             results[club.club_id]["club_points"] = (
-                results[club.club_id]["club_win"] * 3
-                + results[club.club_id]["club_draw"]
+                results[club.club_id]["club_win"] * params.points_win
+                + results[club.club_id]["club_draw"] * params.points_draw
+                + results[club.club_id]["club_lost"] * params.points_lose
             )
             results[club.club_id]["club_gdif"] = (
                 results[club.club_id]["club_goals"]
@@ -335,6 +337,8 @@ async def rank_baotg(db: db_deps):
             key=lambda x: tuple([x[mapping_priority[p]] for p in first_priority]),
             reverse=True,
         )
+
+        print(results[:10])
 
         temp = []
         groups = []

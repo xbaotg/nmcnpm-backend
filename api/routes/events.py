@@ -93,7 +93,11 @@ async def add_event(
             "message": "The player is not in this team ID!",
         }
 
-    check_event_time(db, event.seconds)
+    res = check_event_time(db, event.seconds)
+    print(res)
+    
+    if "status" in res and res["status"] == "error":
+        return res
 
     event_name = convert_from_attr(
         GoalTypes, event.events, "type_name", "type_id", True
@@ -206,7 +210,10 @@ def update_event(
             "message": "The player is not in this team ID!",
         }
 
-    check_event_time(db, event.seconds)
+    res = check_event_time(db, event.seconds)
+    
+    if "status" in res and res["status"] == "error":
+        return res
 
     event_name = convert_from_attr(
         GoalTypes, event.events, "type_name", "type_id", True
